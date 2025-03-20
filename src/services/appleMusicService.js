@@ -48,4 +48,4 @@ export async function getUserStats() {
   }
 }
 
-export { getTopArtists, getTopTracks, getUserStats };
+export { getTopArtists, getTopTracks };

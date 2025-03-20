@@ -23,18 +23,24 @@ export function getAuthorizationURL() {
  * @returns {Promise<{accessToken: string, refreshToken: string}>} Les jetons d'accès et de rafraîchissement.
  */
 export async function getAccessTokenFromCode(code) {
-  try {
-    const data = await spotifyApi.authorizationCodeGrant(code);
-    const accessToken = data.body['access_token'];
-    const refreshToken = data.body['refresh_token'];
+  const data = await spotifyApi.authorizationCodeGrant(code);
 
-    spotifyApi.setAccessToken(accessToken);
-    spotifyApi.setRefreshToken(refreshToken);
-
-    return { accessToken, refreshToken };
-  } catch (error) {
-    handleError(error, "Erreur lors de l'obtention du jeton d'accès");
+  if (!data || !data.body) {
+    throw new Error("Réponse invalide de l'API Spotify");
   }
+
+  const accessToken = data.body.access_token || undefined;
+  const refreshToken = data.body.refresh_token || undefined;
+
+  if (accessToken) {
+    spotifyApi.setAccessToken(accessToken);
+  }
+
+  if (refreshToken) {
+    spotifyApi.setRefreshToken(refreshToken);
+  }
+
+  return { accessToken, refreshToken };
 }
 
 /**
@@ -54,7 +60,6 @@ export async function refreshAccessToken() {
     handleError(error, 'Erreur lors du rafraîchissement du token');
   }
 }
-
 
 /**
  * Récupère les statistiques musicales d'un utilisateur, y compris le genre préféré,
@@ -80,7 +85,7 @@ export async function getSpotifyStats() {
  * @param {number} [limit=3] - Nombre d'artistes à récupérer (par défaut, 3 artistes).
  * @returns {Promise<Array<{top_listened_artist: string, top_ranking: number}>>}
  */
-async function getUserTopArtists(limit = 3) {
+export async function getUserTopArtists(limit = 3) {
   return fetchSpotifyData(
     () => spotifyApi.getMyTopArtists({ limit }),
     "Erreur dans la récupération des artistes les plus écoutés par l'utilisateur",
@@ -96,7 +101,7 @@ async function getUserTopArtists(limit = 3) {
  * @param {number} [limit=3] - Nombre de musiques à récupérer.
  * @returns {Promise<Array<{top_listened_music: string, artist_name: string, top_ranking: number}>>}
  */
-async function getUserTopMusics(limit = 3) {
+export async function getUserTopMusics(limit = 3) {
   return fetchSpotifyData(
     () => spotifyApi.getMyTopTracks({ limit }),
     "Erreur dans la récupération des musiques les plus écoutées par l'utilisateur",
@@ -113,7 +118,7 @@ async function getUserTopMusics(limit = 3) {
  * en analysant les 30 artistes les plus écoutés.
  * @returns {Promise<string>} Le genre préféré de l'utilisateur.
  */
-async function getUserFavoriteGenre() {
+export async function getUserFavoriteGenre() {
   return fetchSpotifyData(
     () => spotifyApi.getMyTopArtists({ limit: 30 }),
     'Erreur dans la recherche des genres musicaux',
@@ -142,7 +147,7 @@ async function getUserFavoriteGenre() {
  * @param {Function} transformData - Fonction de transformation des données.
  * @returns {Promise<any>} - Résultat transformé de l'API Spotify.
  */
-async function fetchSpotifyData(apiCall, errorMessage, transformData) {
+export async function fetchSpotifyData(apiCall, errorMessage, transformData) {
   try {
     const { body } = await apiCall();
     return transformData(body);
@@ -158,15 +163,20 @@ async function fetchSpotifyData(apiCall, errorMessage, transformData) {
  * @param {string} message - Message d'erreur personnalisé.
  * @throws {Error} Relance l'erreur après l'avoir loguée.
  */
-function handleError(error, message) {
+export function handleError(error, message) {
   console.error(message, error);
+
   if (error.body?.error) {
     console.error('Détails de l’erreur:', error.body.error);
+    throw new Error(error.body.error);
   }
 
   if (error.code === 'ETIMEDOUT') {
     console.error('La requête a expiré. Veuillez essayer à nouveau.');
+    throw new Error('ETIMEDOUT');
   }
 
-  throw error;
+  if (!(error instanceof Error)) {
+    throw new Error(message);
+  }
 }

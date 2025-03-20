@@ -7,7 +7,7 @@ import {
 
 /**
  * @swagger
- * /api/music/top-artist:
+ * /api/statistics/rankings/artist:
  *   get:
  *     summary: Récupère un artiste spécifique du top 3 écouté par un utilisateur
  *     description: Retourne le nom de l'artiste en fonction de son classement 
@@ -36,7 +36,10 @@ import {
  *               type: object
  *               properties:
  *                 artist_name:
- *                   type: string
+ *                   type: String
+ *                   maxLength: 255
+ *                   description: Le nom de l'artiste correspondant au classsement donné
+ *                   example: "nom artiste"
  *       400:
  *         description: Requête invalide - `userId` et/ou `ranking` manquant(s),
  *                      Requête invalide - `ranking` doit être compris entre 1 et 3.
@@ -47,6 +50,7 @@ import {
  *               properties:
  *                 error:
  *                   type: string
+ *                   example: Requête invalide - `userId` et/ou `ranking` manquant(s).
  *       404:
  *         description: Aucun artiste trouvé pour cet utilisateur et ce classement.
  *         content:
@@ -56,6 +60,7 @@ import {
  *               properties:
  *                 error:
  *                   type: string
+ *                   example: Aucun artiste trouvé pour cet utilisateur et ce classement.
  *       500:
  *         description: Erreur interne du serveur.
  *         content:
@@ -65,6 +70,7 @@ import {
  *               properties:
  *                 error:
  *                   type: string
+ *                   example: Erreur interne du serveur.
  */
 
 /**
