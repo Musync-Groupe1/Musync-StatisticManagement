@@ -1,10 +1,5 @@
-Voici le **fichier complet** du `README.md` que tu peux directement copier et utiliser dans ton projet.  
+### 📌 **Music Statistics API**  
 
----
-
-### 📌 **README.md - Music Statistics API**  
-
-```md
 # 🎵 Music Statistics API
 
 Music Statistics API est une API REST permettant d'obtenir et de gérer les statistiques musicales des utilisateurs, comme leurs artistes et musiques les plus écoutés.  
