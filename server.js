@@ -10,19 +10,19 @@ const handle = app.getRequestHandler();
 
 const server = express();
 
-// 📌 Parsage des requêtes JSON et URL encodées
+// Parsage des requêtes JSON et URL encodées
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 
-// 📄 Documentation Swagger disponible sur /api-docs
+// Documentation Swagger disponible sur /api-docs
 server.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.prepare()
   .then(() => {
-    // 📌 Gestion des routes API et Next.js
+    // Gestion des routes API et Next.js
     server.all("*", (req, res) => handle(req, res));
 
-    // 🚀 Lancement du serveur
+    // Lancement du serveur
     server.listen(PORT, () => {
       console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
       console.log(`📄 Documentation Swagger : http://localhost:${PORT}/api-docs`);
