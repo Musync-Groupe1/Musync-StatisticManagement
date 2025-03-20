@@ -9,12 +9,13 @@ L'API est documentée avec **Swagger** et est construite avec **Node.js, Express
 - [🚀 Installation et Lancement](#-installation-et-lancement)
 - [📚 Documentation Swagger](#-documentation-swagger)
 - [🔌 Endpoints](#-endpoints)
- - [📌 Récupérer le genre musical favori](#-1-récupérer-le-genre-musical-favori-dun-utilisateur)
+  - [📌 Récupérer le genre musical favori](#-1-récupérer-le-genre-musical-favori-dun-utilisateur)
   - [📌 Récupérer les statistiques musicales](#-2-récupérer-les-statistiques-musicales-dun-utilisateur)
-  - [📌 Récupérer un artiste du top 3 écouté](#-3-récupérer-un-artiste-du-top-3-écouté-par-un-utilisateur)
-  - [📌 Récupérer une musique du top 3 écoutée](#-4-récupérer-une-musique-du-top-3-écoutée-par-un-utilisateur)
+  - [📌 Récupérer un artiste des 3 artistes préférés](#-3-récupérer-un-artiste-du-top-3-écouté-par-un-utilisateur)
+  - [📌 Récupérer une musique des 3 musiques préférées](#-4-récupérer-une-musique-du-top-3-écoutée-par-un-utilisateur)
   - [📌 Récupérer la liste des 3 artistes les plus écoutés](#-5-récupérer-la-liste-des-3-artistes-les-plus-écoutés)
   - [📌 Récupérer la liste des 3 musiques les plus écoutées](#-6-récupérer-la-liste-des-3-musiques-les-plus-écoutées)
+- [📈 Tests](#-tests)
 - [🛠 Technologies utilisées](#-technologies-utilisées)
 - [💡 Auteurs](#-auteurs)
 
@@ -31,6 +32,7 @@ cd Musync-StatisticManagement
 ### 2️⃣ **Installer les dépendances**
 ```sh
 npm install
+npm run build
 ```
 
 ### 3️⃣ **Configurer les variables d’environnement**
@@ -254,6 +256,23 @@ GET /api/statistics/top-musics?userId={user_id}
 - `400 Bad Request` : `userId` manquant  
 - `404 Not Found` : Aucune musique trouvée
 - `500 Internal Server Error` : Erreur serveur  
+
+---
+
+## 📈 Tests
+
+Les tests unitaires sont implémentés avec **Jest**.
+Pour exécuter tous les tests, utilisez la commande suivante :
+```sh
+npm run test
+```
+
+Pour exécuter un test en particulier, utilisez :
+```sh
+npx jest <Fichier_de_test>.js
+```
+
+Lors de l'exécution des tests, un dossier `coverage` sera généré, dans vous aurez un fichier `index.html`, qui indiquera le taux de couverture des fonctions testées pour chaque classe testée.
 
 ---
 
