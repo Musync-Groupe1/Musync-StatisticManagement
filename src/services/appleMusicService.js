@@ -24,7 +24,6 @@ async function getTopTracks() {
 // Récupérer les Top 3 artistes
 async function getTopArtists() {
   try {
-    // Il n'y a pas d'API directe pour obtenir les top artistes. Nous utilisons les top morceaux pour identifier les artistes.
     const topTracks = await getTopTracks();
 
     return topTracks.map((track, index) => ({
@@ -49,4 +48,4 @@ export async function getUserStats() {
   }
 }
 
-export { getTopArtists, getTopTracks, getUserStats };
+export { getTopArtists, getTopTracks };
