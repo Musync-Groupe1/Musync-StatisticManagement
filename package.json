@@ -2,6 +2,7 @@
   "name": "music-statistics-service",
   "version": "1.2.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "node server.js",
     "build": "next build",

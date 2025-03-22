@@ -1,5 +1,8 @@
 import swaggerJSDoc from "swagger-jsdoc";
 import path from "path";
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Définition des options Swagger
 const options = {
@@ -68,8 +71,8 @@ const options = {
   apis: [path.resolve(__dirname, "../pages/api/**/*.js")],
 };
 
-
 // Génération du Swagger
 const swaggerSpec = swaggerJSDoc(options);
 
-module.exports = swaggerSpec;
+// Exportation
+export default swaggerSpec;
