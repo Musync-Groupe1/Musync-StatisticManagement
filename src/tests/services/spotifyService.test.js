@@ -1,5 +1,4 @@
-//import SpotifyWebApi from 'spotify-web-api-node';
-import { getAuthorizationURL, getAccessTokenFromCode, spotifyApi } from '../../services/spotifyService';
+import { getAuthorizationURL, getAccessTokenFromCode, spotifyApi, refreshAccessToken } from '../../services/spotifyService';
 import { handleError } from '../../services/spotifyService';
 
 describe('Spotify API Initialization', () => {
@@ -54,7 +53,7 @@ describe('getAuthorizationURL', () => {
 
 describe('handleError', () => {
   beforeEach(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {}); // Empêche l'affichage des erreurs dans la console
+    jest.spyOn(console, 'error').mockImplementation(() => {}); // Empêche les logs d'erreurs dans les tests
   });
 
   afterEach(() => {
@@ -78,7 +77,7 @@ describe('handleError', () => {
   });
 
   it('should throw the provided message if error is not an instance of Error', () => {
-    const mockError = 'Erreur inconnue'; // Erreur sous forme de string
+    const mockError = 'Erreur inconnue';
 
     expect(() => handleError(mockError, 'Message d’erreur personnalisé')).toThrow('Message d’erreur personnalisé');
     expect(console.error).toHaveBeenCalledWith('Message d’erreur personnalisé', mockError);
@@ -165,5 +164,85 @@ describe('getAccessTokenFromCode', () => {
       accessToken: undefined,
       refreshToken: undefined,
     });
+  });
+
+  it('should throw an error if the API response is invalid', async () => {
+    authorizationCodeGrantSpy.mockResolvedValue(undefined);
+
+    await expect(getAccessTokenFromCode('valid-auth-code'))
+      .rejects.toThrow("Réponse invalide de l'API Spotify");
+
+    authorizationCodeGrantSpy.mockResolvedValue({ body: undefined });
+
+    await expect(getAccessTokenFromCode('valid-auth-code'))
+      .rejects.toThrow("Réponse invalide de l'API Spotify");
+  });
+});
+
+describe('refreshAccessToken', () => {
+  let refreshAccessTokenSpy;
+  let setAccessTokenSpy;
+  
+  beforeEach(() => {
+    refreshAccessTokenSpy = jest.spyOn(spotifyApi, 'refreshAccessToken');
+    setAccessTokenSpy = jest.spyOn(spotifyApi, 'setAccessToken').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  /**
+   * Vérifie que `refreshAccessToken` met à jour et retourne le nouveau token d'accès
+   */
+  it('should refresh the access token and update it in spotifyApi', async () => {
+    const mockResponse = { body: { access_token: 'new-access-token' } };
+    
+    refreshAccessTokenSpy.mockResolvedValue(mockResponse);
+
+    const result = await refreshAccessToken();
+
+    expect(refreshAccessTokenSpy).toHaveBeenCalled();
+    expect(setAccessTokenSpy).toHaveBeenCalledWith('new-access-token');
+    expect(result).toBe('new-access-token');
+  });
+
+  /**
+   * Vérifie que `refreshAccessToken` lève une erreur si `data` ou `data.body` est `undefined`
+   */
+  it('should throw an error if data or data.body is undefined', async () => {
+    refreshAccessTokenSpy.mockResolvedValue(undefined); // Cas où `data` est `undefined`
+    await expect(refreshAccessToken()).rejects.toThrow("Réponse invalide de l'API Spotify : aucun access_token reçu.");
+
+    refreshAccessTokenSpy.mockResolvedValue({}); // Cas où `data.body` est `undefined`
+    await expect(refreshAccessToken()).rejects.toThrow("Réponse invalide de l'API Spotify : aucun access_token reçu.");
+
+    expect(setAccessTokenSpy).not.toHaveBeenCalled(); // Vérifier que le token n'est pas mis à jour
+  });
+
+  /**
+   * Vérifie que `refreshAccessToken` lève une erreur si les prérequis ne sont pas valides
+   */
+  it('should throw an error if clientId, clientSecret, or refreshToken is missing', async () => {
+    jest.spyOn(spotifyApi, 'getClientId').mockReturnValue(null);
+    jest.spyOn(spotifyApi, 'getClientSecret').mockReturnValue('secret');
+    jest.spyOn(spotifyApi, 'getRefreshToken').mockReturnValue('refresh-token');
+
+    await expect(refreshAccessToken()).rejects.toThrow('Les prérequis pour rafraîchir le token ne sont pas valides.');
+
+    expect(refreshAccessTokenSpy).not.toHaveBeenCalled();
+    expect(setAccessTokenSpy).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Vérifie que `refreshAccessToken` lève une erreur si `data.body.access_token` est `undefined`
+   */
+  it('should throw an error if access_token is missing in data.body', async () => {
+    refreshAccessTokenSpy.mockResolvedValue({ body: {} }); // Cas où `access_token` est absent
+
+    await expect(refreshAccessToken()).rejects.toThrow("Réponse invalide de l'API Spotify : aucun access_token reçu.");
+
+    expect(setAccessTokenSpy).not.toHaveBeenCalled(); // Vérifier que le token n'est pas mis à jour
   });
 });

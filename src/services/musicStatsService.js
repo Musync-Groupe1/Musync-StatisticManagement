@@ -71,16 +71,16 @@ export async function getUserMusicPlatform(userId) {
  */
 export async function getUserTopListenedMusics(userId) {
   try {
-      const userMusics = await TopListenedMusic.find({ user_id: userId });
+    const userMusics = await TopListenedMusic.find({ user_id: userId });
 
-      if (!userMusics.length) {
-          throw new Error(`Aucune musique trouvée pour l'utilisateur ${userId}`);
-      }
+    if (!userMusics.length) {
+      throw new Error(`Aucune musique trouvée pour l'utilisateur ${userId}`);
+    }
 
-      return userMusics;
+    return userMusics;
   } catch (error) {
-      console.error(`Erreur lors de la récupération des musiques de l'utilisateur: ${error.message}`);
-      throw error;
+    console.error(`Erreur lors de la récupération des musiques de l'utilisateur: ${error.message}`);
+    throw error;
   }
 }
 

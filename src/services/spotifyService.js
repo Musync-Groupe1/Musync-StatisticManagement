@@ -48,17 +48,28 @@ export async function getAccessTokenFromCode(code) {
  * @returns {Promise<string>} Le nouveau jeton d'accès
  */
 export async function refreshAccessToken() {
-  try {
-    const data = await spotifyApi.refreshAccessToken();
-    const newAccessToken = data.body['access_token'];
-
-    // Mise à jour du jeton d'accès
-    spotifyApi.setAccessToken(newAccessToken);
-
-    return newAccessToken;
-  } catch (error) {
-    handleError(error, 'Erreur lors du rafraîchissement du token');
+  // Vérifier si spotifyApi est bien configuré avant d'appeler l'API
+  if (!spotifyApi.getClientId() || !spotifyApi.getClientSecret() || !spotifyApi.getRefreshToken()) {
+    throw new Error('Les prérequis pour rafraîchir le token ne sont pas valides.');
   }
+
+  const data = await spotifyApi.refreshAccessToken();
+
+  if (!data || !data.body) {
+    throw new Error("Réponse invalide de l'API Spotify : aucun access_token reçu.");
+  }
+
+  const newAccessToken = data.body.access_token;
+
+  // Vérifier si le nouveau jeton d'accès est bien retourné
+  if (!newAccessToken) {
+    throw new Error("Réponse invalide de l'API Spotify : aucun access_token reçu.");
+  }
+
+  // Mise à jour du jeton d'accès
+  spotifyApi.setAccessToken(newAccessToken);
+
+  return newAccessToken;
 }
 
 /**
@@ -152,6 +163,15 @@ export async function fetchSpotifyData(apiCall, errorMessage, transformData) {
     const { body } = await apiCall();
     return transformData(body);
   } catch (error) {
+    if (error.statusCode === 401) {
+      try {
+        const newAccessToken = await refreshAccessToken();
+        return fetchSpotifyData(apiCall, errorMessage, transformData);
+      } catch (refreshError) {
+        throw refreshError;
+      }
+    }
+
     handleError(error, errorMessage);
   }
 }
