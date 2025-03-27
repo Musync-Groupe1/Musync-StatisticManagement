@@ -3,7 +3,10 @@ import {
   getAccessTokenFromCode,
   spotifyApi,
   refreshAccessToken,
-  fetchSpotifyData
+  fetchSpotifyData,
+  getUserTopArtists,
+  getUserTopMusics,
+  getUserFavoriteGenre
 } from '../../services/spotifyService';
 import { handleError } from '../../services/spotifyService';
 
@@ -289,5 +292,185 @@ describe('fetchSpotifyData', () => {
     
     await expect(fetchSpotifyData(apiCallMock, 'Erreur API', transformDataMock))
       .rejects.toThrow('Erreur API : Service Unavailable');
+  });
+});
+
+describe("getUserTopArtists", () => {
+  beforeEach(() => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
+  });
+
+  it("should return formatted top artists when API call succeeds", async () => {
+    jest.spyOn(spotifyApi, "getMyTopArtists").mockResolvedValue({
+      body: {
+        items: [
+          { name: "Artist 1" },
+          { name: "Artist 2" },
+          { name: "Artist 3" },
+        ],
+      },
+    });
+
+    const result = await getUserTopArtists(3);
+
+    expect(spotifyApi.getMyTopArtists).toHaveBeenCalledWith({ limit: 3 });
+
+    expect(result).toEqual([
+      { artist_name: "Artist 1", ranking: 1 },
+      { artist_name: "Artist 2", ranking: 2 },
+      { artist_name: "Artist 3", ranking: 3 },
+    ]);
+  });
+
+  it("should return an empty array if API returns no artists", async () => {
+    jest.spyOn(spotifyApi, "getMyTopArtists").mockResolvedValue({
+      body: { items: [] },
+    });
+
+    const result = await getUserTopArtists(3);
+
+    expect(result).toEqual([]);
+  });
+
+  it("should handle API errors correctly", async () => {
+    jest
+      .spyOn(spotifyApi, "getMyTopArtists")
+      .mockRejectedValue(new Error("API Error"));
+
+    await expect(getUserTopArtists()).rejects.toThrow("API Error");
+  });
+});
+
+describe("getUserTopMusics", () => {
+  beforeEach(() => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
+  });
+
+  it("should return formatted top musics when API call succeeds", async () => {
+    jest.spyOn(spotifyApi, "getMyTopTracks").mockResolvedValue({
+      body: {
+        items: [
+          { name: "Song 1", artists: [{ name: "Artist 1" }] },
+          { name: "Song 2", artists: [{ name: "Artist 2" }] },
+          { name: "Song 3", artists: [{ name: "Artist 3" }] },
+        ],
+      },
+    });
+
+    const result = await getUserTopMusics(3);
+
+    expect(spotifyApi.getMyTopTracks).toHaveBeenCalledWith({ limit: 3 });
+
+    expect(result).toEqual([
+      { music_name: "Song 1", artist_name: "Artist 1", ranking: 1 },
+      { music_name: "Song 2", artist_name: "Artist 2", ranking: 2 },
+      { music_name: "Song 3", artist_name: "Artist 3", ranking: 3 },
+    ]);
+  });
+
+  it("should return an empty array if API returns no tracks", async () => {
+    jest.spyOn(spotifyApi, "getMyTopTracks").mockResolvedValue({
+      body: { items: [] },
+    });
+
+    const result = await getUserTopMusics(3);
+
+    expect(result).toEqual([]);
+  });
+
+  it("should handle API errors correctly", async () => {
+    jest
+      .spyOn(spotifyApi, "getMyTopTracks")
+      .mockRejectedValue(new Error("API Error"));
+
+    await expect(getUserTopMusics()).rejects.toThrow("API Error");
+  });
+});
+
+describe("getUserFavoriteGenre", () => {
+  beforeEach(() => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
+  });
+
+  it("should return the most frequent genre from the user's top artists", async () => {
+    jest.spyOn(spotifyApi, "getMyTopArtists").mockResolvedValue({
+      body: {
+        items: [
+          { genres: ["Rock", "Alternative"] },
+          { genres: ["Rock", "Indie"] },
+          { genres: ["Rock", "Pop"] },
+          { genres: ["Indie", "Alternative"] },
+          { genres: ["Rock"] },
+        ],
+      },
+    });
+
+    const result = await getUserFavoriteGenre();
+
+    expect(["Rock"]).toContain(result); // On vérifie que c'est bien le genre dominant
+  });
+
+  it("should throw an error if no genres are found", async () => {
+    jest.spyOn(spotifyApi, "getMyTopArtists").mockResolvedValue({
+      body: { items: [{ genres: [] }, { genres: [] }] },
+    });
+
+    await expect(getUserFavoriteGenre()).rejects.toThrow(
+      "Aucun genre trouvé parmi les artistes les plus écoutés."
+    );
+  });
+
+  it("should return one of the most frequent genres when multiple have the same count", async () => {
+    jest.spyOn(spotifyApi, "getMyTopArtists").mockResolvedValue({
+      body: {
+        items: [
+          { genres: ["Jazz", "Blues"] },
+          { genres: ["Jazz", "Rock"] },
+          { genres: ["Blues", "Rock"] }
+        ],
+      },
+    });
+
+    const result = await getUserFavoriteGenre();
+
+    expect(["Jazz", "Rock", "Blues"]).toContain(result); // On accepte plusieurs résultats possibles
+  });
+
+  it("should handle API errors correctly", async () => {
+    jest
+      .spyOn(spotifyApi, "getMyTopArtists")
+      .mockRejectedValue(new Error("API Error"));
+
+    await expect(getUserFavoriteGenre()).rejects.toThrow("API Error");
+  });
+
+  it("should return a genre when only one artist is available", async () => {
+    jest.spyOn(spotifyApi, "getMyTopArtists").mockResolvedValue({
+      body: { items: [{ genres: ["Classical"] }] },
+    });
+
+    const result = await getUserFavoriteGenre();
+
+    expect(result).toBe("Classical");
+  });
+
+  it("should ignore artists without genres and still return the most frequent one", async () => {
+    jest.spyOn(spotifyApi, "getMyTopArtists").mockResolvedValue({
+      body: {
+        items: [
+          { genres: [] }, // Pas de genre
+          { genres: ["Electronic"] },
+          { genres: ["Electronic", "House"] },
+          { genres: ["House"] },
+        ],
+      },
+    });
+
+    const result = await getUserFavoriteGenre();
+
+    expect(["Electronic", "House"]).toContain(result); // Accepter les deux
   });
 });
