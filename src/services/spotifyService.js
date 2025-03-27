@@ -157,22 +157,17 @@ export async function getUserFavoriteGenre() {
  * @param {string} errorMessage - Message d'erreur personnalisé.
  * @param {Function} transformData - Fonction de transformation des données.
  * @returns {Promise<any>} - Résultat transformé de l'API Spotify.
+ * @throws {Error} - En cas d'échec de l'appel API ou de la mise à jour du token.
  */
 export async function fetchSpotifyData(apiCall, errorMessage, transformData) {
   try {
     const { body } = await apiCall();
     return transformData(body);
   } catch (error) {
-    if (error.statusCode === 401) {
-      try {
-        const newAccessToken = await refreshAccessToken();
-        return fetchSpotifyData(apiCall, errorMessage, transformData);
-      } catch (refreshError) {
-        throw refreshError;
-      }
+    if (error.statusCode) {
+      throw new Error(`${errorMessage} : ${error.message}`);
     }
-
-    handleError(error, errorMessage);
+    throw new Error(`Erreur inattendue lors de l'appel API : ${error.message}`);
   }
 }
 

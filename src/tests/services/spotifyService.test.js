@@ -1,4 +1,10 @@
-import { getAuthorizationURL, getAccessTokenFromCode, spotifyApi, refreshAccessToken } from '../../services/spotifyService';
+import { 
+  getAuthorizationURL,
+  getAccessTokenFromCode,
+  spotifyApi,
+  refreshAccessToken,
+  fetchSpotifyData
+} from '../../services/spotifyService';
 import { handleError } from '../../services/spotifyService';
 
 describe('Spotify API Initialization', () => {
@@ -244,5 +250,44 @@ describe('refreshAccessToken', () => {
     await expect(refreshAccessToken()).rejects.toThrow("Réponse invalide de l'API Spotify : aucun access_token reçu.");
 
     expect(setAccessTokenSpy).not.toHaveBeenCalled(); // Vérifier que le token n'est pas mis à jour
+  });
+});
+
+describe('fetchSpotifyData', () => {
+  let apiCallMock;
+  let transformDataMock;
+
+  beforeEach(() => {
+    apiCallMock = jest.fn();
+    transformDataMock = jest.fn((data) => data);
+    jest.clearAllMocks();
+  });
+
+  it('should return transformed data on successful API call', async () => {
+    const mockResponse = { body: { data: 'test' } };
+    apiCallMock.mockResolvedValue(mockResponse);
+    
+    const result = await fetchSpotifyData(apiCallMock, 'Erreur API', transformDataMock);
+    
+    expect(apiCallMock).toHaveBeenCalledTimes(1);
+    expect(transformDataMock).toHaveBeenCalledWith(mockResponse.body);
+    expect(result).toEqual(mockResponse.body);
+  });
+
+  it('should throw an error if token refresh fails', async () => {
+    const apiError = new Error('Unauthorized');
+    apiCallMock.mockRejectedValue(apiError);
+    
+    await expect(fetchSpotifyData(apiCallMock, 'Erreur API', transformDataMock))
+      .rejects.toThrow('Unauthorized');
+  });
+
+  it('should throw an error with custom message if API returns a status code', async () => {
+    const apiError = new Error('Service Unavailable');
+    apiError.statusCode = 503;
+    apiCallMock.mockRejectedValue(apiError);
+    
+    await expect(fetchSpotifyData(apiCallMock, 'Erreur API', transformDataMock))
+      .rejects.toThrow('Erreur API : Service Unavailable');
   });
 });
