@@ -1,5 +1,5 @@
 import { getSpotifyStats, getAccessTokenFromCode } from '../../services/spotifyService';
-import { validateMethod, ensureDatabaseConnection } from '../../services/apiHandlerService';
+import { validateMethod, validateInput, setSecurityHeaders, ensureDatabaseConnection, responseError } from '../../services/apiHandlerService';
 import { UserMusicStatistic } from '../../models/UserStats';
 import {TopListenedMusic} from '../../models/TopListenedMusic';
 import {TopListenedArtist} from '../../models/TopListenedArtist';
@@ -124,63 +124,68 @@ import {TopListenedArtist} from '../../models/TopListenedArtist';
  * @returns {Promise<void>} - Retourne une réponse JSON contenant les statistiques musicales de l'utilisateur.
  */
 export default async function handler(req, res) {
-  try {
-    // Vérifie si la méthode HTTP est autorisée
-    if (!validateMethod(req, res)) return;
+  setSecurityHeaders(res);
 
-    const { userId, platform, code } = req.query;
-
-    // Vérification des paramètres requis
-    if (!userId || !platform || !code) {
-      return res.status(400).json({ message: 'Requête invalide - `code`, `userId` et/ou `platform` manquant(s)' });
-    }
-
-    // Vérification de la plateforme
-    if (!['spotify'].includes(platform)) {
-      return res.status(400).json({ message: 'Plateforme non valide' });
-    }
-
-    // Connexion à la base de données
-    if (!(ensureDatabaseConnection(res))) return;
-
-    let stats;
-
-    // Récupération des statistiques selon la plateforme
-    switch (platform) {
-      case 'spotify':
-        try {
-          if (code) await getAccessTokenFromCode(code);
-          stats = await getSpotifyStats();
-        } catch (error) {
-          console.error('Erreur lors de la récupération des statistiques Spotify:', error);
-          return res.status(502).json({ error: 'Impossible de récupérer les statistiques depuis Spotify.' });
-        }
-        break;
-      case 'appleMusic':
-        break;
-    }
-
-    if (!stats || !stats.topArtists || !stats.topMusics) {
-      return res.status(500).json({ error: 'Les données récupérées sont invalides.' });
-    }
-
-    try {
-      // Enregistrement des artistes et musiques les plus écoutés
-      const savedArtists = await saveTopArtists(userId, stats.topArtists);
-      const savedMusics = await saveTopMusics(userId, stats.topMusics);
-
-      // Mise à jour ou insertion des statistiques de l'utilisateur
-      await updateUserMusicStatistics(userId, platform, stats, savedArtists, savedMusics);
-    } catch (error) {
-      console.error("Erreur lors de l'enregistrement en base de données:", error);
-      return res.status(500).json({ error: "Erreur lors de l'enregistrement des statistiques musicales." });
-    }
-
-    res.status(200).json({ message: 'Informations ajoutées dans la base de données.' });
-  } catch (error) {
-    console.error('Erreur interne du serveur:', error);
-    return res.status(500).json({ message: 'Erreur interne du serveur' });
+  // Vérifie si la méthode HTTP est autorisée
+  if (!validateMethod(req, res)) {
+    return res.status(405).json({ message: 'Méthode non autorisée' });
   }
+
+  if (!validateInput(req.query.userId)) {
+    return res.status(400).json({ error: "Paramètre invalide" });
+  }
+
+  const { userId, platform, code } = req.query;
+
+  // Vérification des paramètres requis
+  if (!userId || !platform || !code) {
+    return res.status(400).json({ message: 'Requête invalide - `code`, `userId` et/ou `platform` manquant(s)' });
+  }
+
+  // Vérification de la plateforme
+  if (!['spotify'].includes(platform)) {
+    return res.status(400).json({ message: 'Plateforme non valide' });
+  }
+
+  // Connexion à la base de données
+  if (!(ensureDatabaseConnection())) {
+    return res.status(500).json({ error: "Impossible de se connecter à la base de données." }); 
+  }
+
+  let stats;
+
+  // Récupération des statistiques selon la plateforme
+  switch (platform) {
+    case 'spotify':
+      try {
+        if (code) await getAccessTokenFromCode(code);
+        stats = await getSpotifyStats();
+      } catch (error) {
+        console.error('Erreur lors de la récupération des statistiques Spotify:', error);
+        return res.status(502).json({ error: 'Impossible de récupérer les statistiques depuis Spotify.' });
+      }
+      break;
+    case 'appleMusic':
+      break;
+  }
+
+  if (!stats || !stats.topArtists || !stats.topMusics) {
+    return res.status(500).json({ error: 'Les données récupérées sont invalides.' });
+  }
+
+  try {
+    // Enregistrement des artistes et musiques les plus écoutés
+    const savedArtists = await saveTopArtists(userId, stats.topArtists);
+    const savedMusics = await saveTopMusics(userId, stats.topMusics);
+
+    // Mise à jour ou insertion des statistiques de l'utilisateur
+    await updateUserMusicStatistics(userId, platform, stats, savedArtists, savedMusics);
+  } catch (error) {
+    console.error(error);
+    responseError(res);
+  }
+
+  res.status(200).json({ message: 'Informations ajoutées dans la base de données.' });
 }
 
 /**

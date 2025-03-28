@@ -1,5 +1,5 @@
 import { getAuthorizationURL, getAccessTokenFromCode, spotifyApi, refreshAccessToken } from '../../services/spotifyService';
-// import { fetchSpotifyData, getUserTopArtists, getUserTopMusics, getUserFavoriteGenre } from '../../services/spotifyService';
+//import { fetchSpotifyData, getUserTopArtists, getUserTopMusics, getUserFavoriteGenre } from '../../services/spotifyService';
 
 beforeEach(() => jest.clearAllMocks());
 afterEach(() => jest.restoreAllMocks());
@@ -319,7 +319,7 @@ describe("getUserFavoriteGenre", () => {
     });
 
     await expect(getUserFavoriteGenre()).rejects.toThrow(
-      "Aucun genre trouvé parmi les artistes les plus écoutés."
+      "Erreur inattendue lors de l'appel API : Aucun genre trouvé"
     );
   });
 

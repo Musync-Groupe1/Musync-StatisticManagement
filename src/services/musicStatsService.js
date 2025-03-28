@@ -19,8 +19,7 @@ export async function getUserMusicStats(userId) {
 
     return userStats;
   } catch (error) {
-    console.error(`Erreur lors de la récupération des stats utilisateur: ${error.message}`);
-    throw error;
+    throw new Error(`Erreur lors de la récupération des statistiques de l'utilisateur ${userId}: ${error.message}`);
   }
 }
 
@@ -39,8 +38,7 @@ export async function getUserFavoriteGenre(userId) {
   
       return userStats.favorite_genre;
     } catch (error) {
-      console.error(`Erreur lors de la récupération du genre favori: ${error.message}`);
-      throw error;
+      throw new Error(`Erreur lors de la récupération du genre musical favori pour l'utilisateur ${userId}: ${error.message}`);
     }
 }
 
@@ -59,8 +57,7 @@ export async function getUserMusicPlatform(userId) {
   
       return userStats.music_platform;
     } catch (error) {
-      console.error(`Erreur lors de la récupération de la plateforme musicale: ${error.message}`);
-      throw error;
+      throw new Error(`Erreur lors de la récupération de la plateforme musicale pour l'utilisateur ${userId}: ${error.message}`);
     }
 }
 
@@ -79,8 +76,7 @@ export async function getUserTopListenedMusics(userId) {
 
     return userMusics;
   } catch (error) {
-    console.error(`Erreur lors de la récupération des musiques de l'utilisateur: ${error.message}`);
-    throw error;
+    throw new Error(`Erreur lors de la récupération des musiques pour l'utilisateur ${userId}: ${error.message}`);
   }
 }
 
@@ -99,8 +95,7 @@ export async function getUserTopListenedArtists(userId) {
 
       return userArtists;
   } catch (error) {
-      console.error(`Erreur lors de la récupération des artistes de l'utilisateur: ${error.message}`);
-      throw error;
+    throw new Error(`Erreur lors de la récupération des artistes pour l'utilisateur ${userId}: ${error.message}`);
   }
 }
 
@@ -132,8 +127,7 @@ export async function getMusicByUserAndRanking(userId, ranking) {
 
     return music.music_name;
   } catch (error) {
-    console.error(`Erreur lors de la récupération de la musique: ${error.message}`);
-    throw error;
+    throw new Error(`Erreur lors de la récupération de la musique pour l'utilisateur ${userId}, classement ${ranking}: ${error.message}`);
   }
 }
 
@@ -166,7 +160,6 @@ export async function getArtistByUserAndRanking(userId, ranking) {
 
     return artist.artist_name;
   } catch (error) {
-    console.error(`Erreur lors de la récupération de l'artiste: ${error.message}`);
-    throw error;
+    throw new Error(`Erreur lors de la récupération de l'artiste pour l'utilisateur ${userId}, classement ${ranking}: ${error.message}`);
   }
 }

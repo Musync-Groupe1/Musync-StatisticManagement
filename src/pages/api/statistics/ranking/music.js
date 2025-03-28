@@ -100,7 +100,7 @@ export default async function handler(req, res) {
     }
 
     // Vérifie la connexion à la base de données
-    if (!(ensureDatabaseConnection(res))) return;
+    if (!(ensureDatabaseConnection())) return;
 
     // Récupère la musique en fonction du classement
     const musicName = await getMusicByUserAndRanking(userId, rankingNumber);
@@ -113,6 +113,7 @@ export default async function handler(req, res) {
     // Répond avec le nom de la musique
     return res.status(200).json({ music_name: musicName });
   } catch (error) {
-    responseError(req, res, error);
+    console.error(error);
+    responseError(res);
   }
 }

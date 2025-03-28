@@ -97,7 +97,7 @@ export default async function handler(req, res) {
     }
 
     // Vérifie la connexion à la base de données
-    if (!(ensureDatabaseConnection(res))) return;
+    if (!(ensureDatabaseConnection())) return;
 
     // Récupère les artistes les plus écoutés de l'utilisateur
     const topArtists = await getUserTopListenedArtists(userId);
@@ -110,6 +110,7 @@ export default async function handler(req, res) {
     // Répond avec la liste des artistes
     return res.status(200).json({ top_listened_artists: topArtists });
   } catch (error) {
-    responseError(req, res, error);
+    console.error(error);
+    responseError(res);
   }
 }

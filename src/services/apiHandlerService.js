@@ -12,7 +12,6 @@ import validator from 'validator';
 export function validateMethod(req, res) {
   if (req.method !== 'GET') {
     res.setHeader("Allow", "GET");
-    res.status(405).json({ error: 'Méthode non autorisée' });
     return false;
   }
   return true;
@@ -47,15 +46,13 @@ export function validateInput(input) {
  * Établit une connexion avec la base de données MongoDB.
  * Si la connexion échoue, renvoie une réponse d'erreur.
  *
- * @param {Object} res - Objet de la réponse HTTP.
- * @returns {boolean} - Retourne `true` si la connexion est réussie, sinon `false` avec un code d'erreur 500.
+ * @returns {boolean} - Retourne `true` si la connexion est réussie, sinon `false`
  */
-export async function ensureDatabaseConnection(res) {
+export async function ensureDatabaseConnection() {
   try {
-    await connectToDatabase();
-    return true;
-  } catch (error) {
-    res.status(500).json({ error: "Impossible de se connecter à la base de données." });
+    const isConnected = await connectToDatabase();
+    return isConnected ? true : false;
+  } catch {
     return false;
   }
 }
@@ -64,11 +61,9 @@ export async function ensureDatabaseConnection(res) {
  * Gère les erreurs internes du serveur et envoie une réponse d'erreur générique.
  * Ajoute une protection contre les attaques par timing (brute-force).
  *
- * @param {Object} req - Objet de la requête HTTP.
  * @param {Object} res - Objet de la réponse HTTP.
- * @param {Error} error - Erreur à gérer.
  */
-export function responseError(req, res, error) {
+export function responseError(res) {
   const delay = Math.floor(500 + Math.random() * 1000);
   setTimeout(() => {
     res.status(500).json({ error: "Erreur interne du serveur." });

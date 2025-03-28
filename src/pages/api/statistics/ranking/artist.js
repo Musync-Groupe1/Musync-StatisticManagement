@@ -100,7 +100,7 @@ export default async function handler(req, res) {
     }
 
     // Vérifie la connexion à la base de données
-    if (!ensureDatabaseConnection(res)) return;
+    if (!ensureDatabaseConnection()) return;
 
     // Récupère l'artiste en fonction du classement
     const artistName = await getArtistByUserAndRanking(userId, rankingNumber);
@@ -113,6 +113,7 @@ export default async function handler(req, res) {
     // Répond avec le nom de l'artiste
     return res.status(200).json({ artist_name: artistName });
   } catch (error) {
-    responseError(req, res, error);
+    console.error(error);
+    responseError(res);
   }
 }
