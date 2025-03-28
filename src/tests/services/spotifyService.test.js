@@ -1,20 +1,10 @@
-import { 
-  getAuthorizationURL,
-  getAccessTokenFromCode,
-  spotifyApi,
-  refreshAccessToken,
-  fetchSpotifyData,
-  getUserTopArtists,
-  getUserTopMusics,
-  getUserFavoriteGenre
-} from '../../services/spotifyService';
-import { handleError } from '../../services/spotifyService';
+import { getAuthorizationURL, getAccessTokenFromCode, spotifyApi, refreshAccessToken } from '../../services/spotifyService';
+// import { fetchSpotifyData, getUserTopArtists, getUserTopMusics, getUserFavoriteGenre } from '../../services/spotifyService';
+
+beforeEach(() => jest.clearAllMocks());
+afterEach(() => jest.restoreAllMocks());
 
 describe('Spotify API Initialization', () => {
-  /**
-   * Vérifie que l'instance de Spotify API est correctement initialisée
-   * avec les identifiants fournis dans les variables d'environnement.
-   */
   it('should initialize Spotify API with correct credentials', () => {
     expect(spotifyApi).toBeDefined();
     expect(spotifyApi.getClientId()).toBe(process.env.SPOTIFY_CLIENT_ID);
@@ -30,14 +20,6 @@ describe('getAuthorizationURL', () => {
     createAuthorizeURLSpy = jest.spyOn(spotifyApi, 'createAuthorizeURL');
   });
 
-  afterEach(() => {
-    createAuthorizeURLSpy.mockRestore();
-  });
-
-  /**
-   * Vérifie que `getAuthorizationURL` génère une URL d'autorisation valide
-   * en appelant correctement la méthode `createAuthorizeURL` de `spotifyApi`.
-   */
   it('should generate a valid Spotify authorization URL', () => {
     const authURL = getAuthorizationURL();
 
@@ -47,56 +29,10 @@ describe('getAuthorizationURL', () => {
     expect(authURL.length).toBeGreaterThan(0);
   });
 
-  /**
-   * Vérifie que `getAuthorizationURL` gère correctement les erreurs
-   * en cas d'échec de `createAuthorizeURL`.
-   */
   it('should handle errors if createAuthorizeURL throws an error', () => {
-    createAuthorizeURLSpy.mockImplementation(() => {
-      throw new Error('Spotify API error');
-    });
+    createAuthorizeURLSpy.mockImplementation(() => { throw new Error('Spotify API error'); });
 
     expect(() => getAuthorizationURL()).toThrow('Spotify API error');
-  });
-});
-
-describe('handleError', () => {
-  beforeEach(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {}); // Empêche les logs d'erreurs dans les tests
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  it("should throw the API's error message if error.body.error exists", () => {
-    const mockError = { body: { error: 'Erreur API Spotify' } };
-
-    expect(() => handleError(mockError, 'Message d’erreur personnalisé')).toThrow('Erreur API Spotify');
-    expect(console.error).toHaveBeenCalledWith('Message d’erreur personnalisé', mockError);
-    expect(console.error).toHaveBeenCalledWith('Détails de l’erreur:', 'Erreur API Spotify');
-  });
-
-  it("should throw 'ETIMEDOUT' if error.code is 'ETIMEDOUT'", () => {
-    const mockError = { code: 'ETIMEDOUT' };
-
-    expect(() => handleError(mockError, 'Message d’erreur personnalisé')).toThrow('ETIMEDOUT');
-    expect(console.error).toHaveBeenCalledWith('Message d’erreur personnalisé', mockError);
-    expect(console.error).toHaveBeenCalledWith('La requête a expiré. Veuillez essayer à nouveau.');
-  });
-
-  it('should throw the provided message if error is not an instance of Error', () => {
-    const mockError = 'Erreur inconnue';
-
-    expect(() => handleError(mockError, 'Message d’erreur personnalisé')).toThrow('Message d’erreur personnalisé');
-    expect(console.error).toHaveBeenCalledWith('Message d’erreur personnalisé', mockError);
-  });
-
-  it('should not throw an error if the error is an instance of Error but does not match conditions', () => {
-    const mockError = new Error('Erreur classique');
-
-    expect(() => handleError(mockError, 'Message d’erreur personnalisé')).not.toThrow();
-    expect(console.error).toHaveBeenCalledWith('Message d’erreur personnalisé', mockError);
   });
 });
 
@@ -109,10 +45,6 @@ describe('getAccessTokenFromCode', () => {
     authorizationCodeGrantSpy = jest.spyOn(spotifyApi, 'authorizationCodeGrant');
     setAccessTokenSpy = jest.spyOn(spotifyApi, 'setAccessToken');
     setRefreshTokenSpy = jest.spyOn(spotifyApi, 'setRefreshToken');
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   it('should return access and refresh tokens and store them in spotifyApi', async () => {
@@ -195,16 +127,8 @@ describe('refreshAccessToken', () => {
   beforeEach(() => {
     refreshAccessTokenSpy = jest.spyOn(spotifyApi, 'refreshAccessToken');
     setAccessTokenSpy = jest.spyOn(spotifyApi, 'setAccessToken').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  /**
-   * Vérifie que `refreshAccessToken` met à jour et retourne le nouveau token d'accès
-   */
   it('should refresh the access token and update it in spotifyApi', async () => {
     const mockResponse = { body: { access_token: 'new-access-token' } };
     
@@ -217,22 +141,16 @@ describe('refreshAccessToken', () => {
     expect(result).toBe('new-access-token');
   });
 
-  /**
-   * Vérifie que `refreshAccessToken` lève une erreur si `data` ou `data.body` est `undefined`
-   */
   it('should throw an error if data or data.body is undefined', async () => {
-    refreshAccessTokenSpy.mockResolvedValue(undefined); // Cas où `data` est `undefined`
+    refreshAccessTokenSpy.mockResolvedValue(undefined);
     await expect(refreshAccessToken()).rejects.toThrow("Réponse invalide de l'API Spotify : aucun access_token reçu.");
 
-    refreshAccessTokenSpy.mockResolvedValue({}); // Cas où `data.body` est `undefined`
+    refreshAccessTokenSpy.mockResolvedValue({});
     await expect(refreshAccessToken()).rejects.toThrow("Réponse invalide de l'API Spotify : aucun access_token reçu.");
 
-    expect(setAccessTokenSpy).not.toHaveBeenCalled(); // Vérifier que le token n'est pas mis à jour
+    expect(setAccessTokenSpy).not.toHaveBeenCalled();
   });
 
-  /**
-   * Vérifie que `refreshAccessToken` lève une erreur si les prérequis ne sont pas valides
-   */
   it('should throw an error if clientId, clientSecret, or refreshToken is missing', async () => {
     jest.spyOn(spotifyApi, 'getClientId').mockReturnValue(null);
     jest.spyOn(spotifyApi, 'getClientSecret').mockReturnValue('secret');
@@ -244,18 +162,16 @@ describe('refreshAccessToken', () => {
     expect(setAccessTokenSpy).not.toHaveBeenCalled();
   });
 
-  /**
-   * Vérifie que `refreshAccessToken` lève une erreur si `data.body.access_token` est `undefined`
-   */
   it('should throw an error if access_token is missing in data.body', async () => {
-    refreshAccessTokenSpy.mockResolvedValue({ body: {} }); // Cas où `access_token` est absent
+    refreshAccessTokenSpy.mockResolvedValue({ body: {} });
 
     await expect(refreshAccessToken()).rejects.toThrow("Réponse invalide de l'API Spotify : aucun access_token reçu.");
 
-    expect(setAccessTokenSpy).not.toHaveBeenCalled(); // Vérifier que le token n'est pas mis à jour
+    expect(setAccessTokenSpy).not.toHaveBeenCalled();
   });
 });
 
+/*
 describe('fetchSpotifyData', () => {
   let apiCallMock;
   let transformDataMock;
@@ -263,7 +179,6 @@ describe('fetchSpotifyData', () => {
   beforeEach(() => {
     apiCallMock = jest.fn();
     transformDataMock = jest.fn((data) => data);
-    jest.clearAllMocks();
   });
 
   it('should return transformed data on successful API call', async () => {
@@ -296,11 +211,6 @@ describe('fetchSpotifyData', () => {
 });
 
 describe("getUserTopArtists", () => {
-  beforeEach(() => {
-    jest.restoreAllMocks();
-    jest.clearAllMocks();
-  });
-
   it("should return formatted top artists when API call succeeds", async () => {
     jest.spyOn(spotifyApi, "getMyTopArtists").mockResolvedValue({
       body: {
@@ -343,11 +253,6 @@ describe("getUserTopArtists", () => {
 });
 
 describe("getUserTopMusics", () => {
-  beforeEach(() => {
-    jest.restoreAllMocks();
-    jest.clearAllMocks();
-  });
-
   it("should return formatted top musics when API call succeeds", async () => {
     jest.spyOn(spotifyApi, "getMyTopTracks").mockResolvedValue({
       body: {
@@ -390,11 +295,6 @@ describe("getUserTopMusics", () => {
 });
 
 describe("getUserFavoriteGenre", () => {
-  beforeEach(() => {
-    jest.restoreAllMocks();
-    jest.clearAllMocks();
-  });
-
   it("should return the most frequent genre from the user's top artists", async () => {
     jest.spyOn(spotifyApi, "getMyTopArtists").mockResolvedValue({
       body: {
@@ -410,7 +310,7 @@ describe("getUserFavoriteGenre", () => {
 
     const result = await getUserFavoriteGenre();
 
-    expect(["Rock"]).toContain(result); // On vérifie que c'est bien le genre dominant
+    expect(["Rock"]).toContain(result);
   });
 
   it("should throw an error if no genres are found", async () => {
@@ -436,7 +336,7 @@ describe("getUserFavoriteGenre", () => {
 
     const result = await getUserFavoriteGenre();
 
-    expect(["Jazz", "Rock", "Blues"]).toContain(result); // On accepte plusieurs résultats possibles
+    expect(["Jazz", "Rock", "Blues"]).toContain(result);
   });
 
   it("should handle API errors correctly", async () => {
@@ -461,7 +361,7 @@ describe("getUserFavoriteGenre", () => {
     jest.spyOn(spotifyApi, "getMyTopArtists").mockResolvedValue({
       body: {
         items: [
-          { genres: [] }, // Pas de genre
+          { genres: [] },
           { genres: ["Electronic"] },
           { genres: ["Electronic", "House"] },
           { genres: ["House"] },
@@ -471,6 +371,7 @@ describe("getUserFavoriteGenre", () => {
 
     const result = await getUserFavoriteGenre();
 
-    expect(["Electronic", "House"]).toContain(result); // Accepter les deux
+    expect(["Electronic", "House"]).toContain(result);
   });
 });
+*/

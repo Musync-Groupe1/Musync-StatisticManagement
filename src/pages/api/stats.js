@@ -1,5 +1,4 @@
 import { getSpotifyStats, getAccessTokenFromCode } from '../../services/spotifyService';
-import { getUserStats as getAppleMusicStats } from '../../services/appleMusicService';
 import { validateMethod, ensureDatabaseConnection } from '../../services/apiHandlerService';
 import { UserMusicStatistic } from '../../models/UserStats';
 import {TopListenedMusic} from '../../models/TopListenedMusic';
@@ -126,10 +125,10 @@ import {TopListenedArtist} from '../../models/TopListenedArtist';
  */
 export default async function handler(req, res) {
   try {
-    const { userId, platform, code } = req.query;
-
     // Vérifie si la méthode HTTP est autorisée
     if (!validateMethod(req, res)) return;
+
+    const { userId, platform, code } = req.query;
 
     // Vérification des paramètres requis
     if (!userId || !platform || !code) {
@@ -137,7 +136,7 @@ export default async function handler(req, res) {
     }
 
     // Vérification de la plateforme
-    if (!['spotify', 'appleMusic'].includes(platform)) {
+    if (!['spotify'].includes(platform)) {
       return res.status(400).json({ message: 'Plateforme non valide' });
     }
 
@@ -149,24 +148,37 @@ export default async function handler(req, res) {
     // Récupération des statistiques selon la plateforme
     switch (platform) {
       case 'spotify':
-        if (code) await getAccessTokenFromCode(code);
-        stats = await getSpotifyStats();
+        try {
+          if (code) await getAccessTokenFromCode(code);
+          stats = await getSpotifyStats();
+        } catch (error) {
+          console.error('Erreur lors de la récupération des statistiques Spotify:', error);
+          return res.status(502).json({ error: 'Impossible de récupérer les statistiques depuis Spotify.' });
+        }
         break;
       case 'appleMusic':
-        stats = await getAppleMusicStats(userId);
         break;
     }
 
-    // Enregistrement des artistes et musiques les plus écoutés
-    const savedArtists = await saveTopArtists(userId, stats.topArtists);
-    const savedMusics = await saveTopMusics(userId, stats.topMusics);
+    if (!stats || !stats.topArtists || !stats.topMusics) {
+      return res.status(500).json({ error: 'Les données récupérées sont invalides.' });
+    }
 
-    // Mise à jour ou insertion des statistiques de l'utilisateur
-    await updateUserMusicStatistics(userId, platform, stats, savedArtists, savedMusics);
+    try {
+      // Enregistrement des artistes et musiques les plus écoutés
+      const savedArtists = await saveTopArtists(userId, stats.topArtists);
+      const savedMusics = await saveTopMusics(userId, stats.topMusics);
+
+      // Mise à jour ou insertion des statistiques de l'utilisateur
+      await updateUserMusicStatistics(userId, platform, stats, savedArtists, savedMusics);
+    } catch (error) {
+      console.error("Erreur lors de l'enregistrement en base de données:", error);
+      return res.status(500).json({ error: "Erreur lors de l'enregistrement des statistiques musicales." });
+    }
 
     res.status(200).json({ message: 'Informations ajoutées dans la base de données.' });
   } catch (error) {
-    console.error('Error fetching stats:', error);
+    console.error('Erreur interne du serveur:', error);
     return res.status(500).json({ message: 'Erreur interne du serveur' });
   }
 }
@@ -207,8 +219,17 @@ async function saveTopMusics(userId, top_listened_musics) {
     return await Promise.all(
       top_listened_musics.map(music => 
         TopListenedMusic.findOneAndUpdate(
-          { user_id: userId, music_name: music.music_name, artist_name: music.artist_name },
-          { user_id: userId, music_name: music.music_name, artist_name: music.artist_name, ranking: music.ranking },
+          { 
+            user_id: userId,
+            music_name: music.music_name,
+            artist_name: music.artist_name
+          },
+          { 
+            user_id: userId,
+            music_name: music.music_name,
+            artist_name: music.artist_name,
+            ranking: music.ranking
+          },
           { upsert: true, new: true, runValidators: true }
         )
       )

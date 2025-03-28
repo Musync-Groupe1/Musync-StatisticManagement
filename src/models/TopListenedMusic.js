@@ -28,17 +28,15 @@ const topListenedMusicSchema = new mongoose.Schema({
   ranking: { 
     type: Number, 
     required: true,
+    unique: true,
     min: 1, // Le classement commence à 1
     max: 3  // Le classement se finit à 3
-  }}, { 
-    versionKey: false
-});
+  }}, { versionKey: false });
 
 /**
  * Le modèle de Mongoose pour les musiques les plus écoutées.
  * Si le modèle a déjà été défini, il est utilisé ; sinon, un nouveau modèle est créé.
  */
 export const TopListenedMusic = mongoose.models.TopListenedMusic || mongoose.model(
-  'TopListenedMusic',
-  topListenedMusicSchema
+  'TopListenedMusic', topListenedMusicSchema
 );
