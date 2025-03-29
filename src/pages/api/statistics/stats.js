@@ -131,7 +131,7 @@ export default async function handler(req, res) {
     }
 
     // Vérifie la connexion à la base de données
-    if (!(ensureDatabaseConnection(res))) return;
+    if (!(ensureDatabaseConnection())) return;
 
     // Récupération des statistiques utilisateur
     const [favoriteGenre, musicPlatform, topMusics, topArtists] = await Promise.all([
@@ -156,6 +156,7 @@ export default async function handler(req, res) {
       top_listened_artists: topArtists
     });
   } catch (error) {
-    responseError(req, res, error);
+    console.error(error);
+    responseError(res);
   }
 }

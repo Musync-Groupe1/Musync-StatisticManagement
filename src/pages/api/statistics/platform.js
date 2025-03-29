@@ -83,7 +83,7 @@ export default async function handler(req, res) {
     }
 
     // Vérifie la connexion à la base de données
-    if (!ensureDatabaseConnection(res)) return;
+    if (!ensureDatabaseConnection()) return;
 
     // Récupère la plateforme musicale de l'utilisateur
     const platform = await getUserMusicPlatform(userId);
@@ -96,6 +96,7 @@ export default async function handler(req, res) {
     // Répond avec la plateforme trouvée
     res.status(200).json({ music_platform: platform });
   } catch (error) {
-    responseError(req, res, error);
+    console.error(error);
+    responseError(res);
   }
 }

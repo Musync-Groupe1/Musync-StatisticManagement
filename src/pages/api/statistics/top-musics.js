@@ -103,7 +103,7 @@ export default async function handler(req, res) {
     }
 
     // Vérifie la connexion à la base de données
-    if (!(ensureDatabaseConnection(res))) return;
+    if (!(ensureDatabaseConnection())) return;
 
     // Récupération des musiques les plus écoutées
     const topMusics = await getUserTopListenedMusics(userId);
@@ -116,6 +116,7 @@ export default async function handler(req, res) {
     // Répond avec la liste des musiques les plus écoutées
     return res.status(200).json({ top_listened_musics: topMusics });
   } catch (error) {
-    responseError(req, res, error);
+    console.error(error);
+    responseError(res);
   }
 }

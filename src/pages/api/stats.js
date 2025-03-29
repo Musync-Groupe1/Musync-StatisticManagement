@@ -1,6 +1,5 @@
 import { getSpotifyStats, getAccessTokenFromCode } from '../../services/spotifyService';
-import { getUserStats as getAppleMusicStats } from '../../services/appleMusicService';
-import { validateMethod, ensureDatabaseConnection } from '../../services/apiHandlerService';
+import { validateMethod, validateInput, setSecurityHeaders, ensureDatabaseConnection, responseError } from '../../services/apiHandlerService';
 import { UserMusicStatistic } from '../../models/UserStats';
 import {TopListenedMusic} from '../../models/TopListenedMusic';
 import {TopListenedArtist} from '../../models/TopListenedArtist';
@@ -125,84 +124,88 @@ import {TopListenedArtist} from '../../models/TopListenedArtist';
  * @returns {Promise<void>} - Retourne une réponse JSON contenant les statistiques musicales de l'utilisateur.
  */
 export default async function handler(req, res) {
-  try {
-    const { userId, platform, code } = req.query;
+  setSecurityHeaders(res);
 
-    // Vérifie si la méthode HTTP est autorisée
-    if (!validateMethod(req, res)) return;
+  // Vérifie si la méthode HTTP est autorisée
+  if (!validateMethod(req, res)) {
+    return res.status(405).json({ message: 'Méthode non autorisée' });
+  }
 
-    // Vérification des paramètres requis
-    if (!userId || !platform || !code) {
-      return res.status(400).json({ message: 'Requête invalide - `code`, `userId` et/ou `platform` manquant(s)' });
-    }
+  if (!validateInput(req.query.userId)) {
+    return res.status(400).json({ error: "Paramètre invalide" });
+  }
 
-    // Vérification de la plateforme
-    if (!['spotify', 'appleMusic'].includes(platform)) {
-      console.error('Plateforme non valide:', platform);
-      return res.status(400).json({ message: 'Plateforme non valide' });
-    }
+  const { userId, platform, code } = req.query;
 
-    // Connexion à la base de données
-    if (!(ensureDatabaseConnection(res))) return;
-    
-    let stats;
+  // Vérification des paramètres requis
+  if (!userId || !platform || !code) {
+    return res.status(400).json({ message: 'Requête invalide - `code`, `userId` et/ou `platform` manquant(s)' });
+  }
 
-    // Récupération des statistiques selon la plateforme
-    switch (platform) {
-      case 'spotify':
-        // Si un code d'autorisation est présent, obtenir le jeton d'accès
-        if (code) {
-           // Échange du code contre un access token
-          await getAccessTokenFromCode(code);
-        }
+  // Vérification de la plateforme
+  if (!['spotify'].includes(platform)) {
+    return res.status(400).json({ message: 'Plateforme non valide' });
+  }
+
+  // Connexion à la base de données
+  if (!(ensureDatabaseConnection())) {
+    return res.status(500).json({ error: "Impossible de se connecter à la base de données." }); 
+  }
+
+  let stats;
+
+  // Récupération des statistiques selon la plateforme
+  switch (platform) {
+    case 'spotify':
+      try {
+        if (code) await getAccessTokenFromCode(code);
         stats = await getSpotifyStats();
-        break;
+      } catch (error) {
+        console.error('Erreur lors de la récupération des statistiques Spotify:', error);
+        return res.status(502).json({ error: 'Impossible de récupérer les statistiques depuis Spotify.' });
+      }
+      break;
+    case 'appleMusic':
+      break;
+  }
 
-      case 'appleMusic':
-        // Récupère les données de l'utilisateur depuis Apple Music
-        stats = await getAppleMusicStats(userId);
-        break;
-    }
+  if (!stats || !stats.topArtists || !stats.topMusics) {
+    return res.status(500).json({ error: 'Les données récupérées sont invalides.' });
+  }
 
+  try {
     // Enregistrement des artistes et musiques les plus écoutés
     const savedArtists = await saveTopArtists(userId, stats.topArtists);
-    const savedMusics = await saveTopMusics(userId, stats.topMusics);    
+    const savedMusics = await saveTopMusics(userId, stats.topMusics);
 
     // Mise à jour ou insertion des statistiques de l'utilisateur
-    await UserMusicStatistic.findOneAndUpdate(
-      { user_id: userId },
-      {
-        user_id: userId,
-        favorite_genre: stats.favoriteGenre,
-        music_platform: platform,
-        top_listened_artists: savedArtists,
-        top_listened_musics: savedMusics,
-      },
-      { upsert: true, new: true }
-    );
-
-    // Insère les données de l'utilisateur dans la base de données
-    res.status(200).json({ message: 'Informations ajoutées dans la base de données.' });
+    await updateUserMusicStatistics(userId, platform, stats, savedArtists, savedMusics);
   } catch (error) {
-    console.error('Error fetching stats:', error);
-    return res.status(500).json({ message: 'Erreur interne du serveur' });
+    console.error(error);
+    responseError(res);
   }
+
+  res.status(200).json({ message: 'Informations ajoutées dans la base de données.' });
 }
 
 /**
- * Enregistre les artistes les plus écoutés en base de données.
- * @param {Array} top_listened_artists - Liste des artistes les plus écoutés
- * @returns {Promise<Array>} - Liste des identifiants des artistes enregistrés
+ * Enregistre ou met à jour les artistes les plus écoutés en base de données.
+ * 
+ * @param {number} userId - Identifiant de l'utilisateur.
+ * @param {Array} top_listened_artists - Liste des artistes les plus écoutés.
+ * @returns {Promise<Array>} - Liste des artistes enregistrés.
  */
 async function saveTopArtists(userId, top_listened_artists) {
   try {
-    const artistsWithUserId = top_listened_artists.map(artist => ({
-      ...artist,
-      user_id: userId,
-    }));
-
-    const savedArtists = await TopListenedArtist.insertMany(artistsWithUserId, { ordered: false });
-    return savedArtists.map(artist => artist.id);
+    return await Promise.all(
+      top_listened_artists.map(artist => 
+        TopListenedArtist.findOneAndUpdate(
+          { user_id: userId, artist_name: artist.artist_name },
+          { user_id: userId, artist_name: artist.artist_name, ranking: artist.ranking },
+          { upsert: true, new: true, runValidators: true }
+        )
+      )
+    );
   } catch (error) {
     console.error("Erreur lors de l'enregistrement des 'top artists':", error);
     throw error;
@@ -210,21 +213,63 @@ async function saveTopArtists(userId, top_listened_artists) {
 }
 
 /**
- * Enregistre les musiques les plus écoutées en base de données.
- * @param {Array} top_listened_musics - Liste des musiques les plus écoutées
- * @returns {Promise<Array>} - Liste des identifiants des musiques enregistrées
+ * Enregistre ou met à jour les musiques les plus écoutées en base de données.
+ * 
+ * @param {number} userId - Identifiant de l'utilisateur.
+ * @param {Array} top_listened_musics - Liste des musiques les plus écoutées.
+ * @returns {Promise<Array>} - Liste des musiques enregistrées.
  */
 async function saveTopMusics(userId, top_listened_musics) {
   try {
-    const musicsWithUserId = top_listened_musics.map(music => ({
-      ...music,
-      user_id: userId,
-    }));
-
-    const savedMusics = await TopListenedMusic.insertMany(musicsWithUserId, { ordered: false });
-    return savedMusics.map(music => music.id);
+    return await Promise.all(
+      top_listened_musics.map(music => 
+        TopListenedMusic.findOneAndUpdate(
+          { 
+            user_id: userId,
+            music_name: music.music_name,
+            artist_name: music.artist_name
+          },
+          { 
+            user_id: userId,
+            music_name: music.music_name,
+            artist_name: music.artist_name,
+            ranking: music.ranking
+          },
+          { upsert: true, new: true, runValidators: true }
+        )
+      )
+    );
   } catch (error) {
     console.error("Erreur lors de l'enregistrement des 'top musics':", error);
+    throw error;
+  }
+}
+
+/**
+ * Met à jour ou insère les statistiques musicales d'un utilisateur en base de données.
+ * 
+ * @param {number} userId - Identifiant de l'utilisateur
+ * @param {string} platform - Plateforme musicale (spotify ou appleMusic)
+ * @param {Object} stats - Données des statistiques musicales de l'utilisateur
+ * @param {Array} savedArtists - Liste des artistes enregistrés en base
+ * @param {Array} savedMusics - Liste des musiques enregistrées en base
+ * @returns {Promise<void>}
+ */
+async function updateUserMusicStatistics(userId, platform, stats, savedArtists, savedMusics) {
+  try {
+    await UserMusicStatistic.findOneAndUpdate(
+      { user_id: userId },
+      {
+        user_id: userId,
+        favorite_genre: stats.favoriteGenre,
+        music_platform: platform,
+        top_listened_artists: savedArtists.map(a => a._id), // Stocke les ID des artistes
+        top_listened_musics: savedMusics.map(m => m._id), // Stocke les ID des musiques
+      },
+      { upsert: true, new: true, runValidators: true }
+    );
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour des statistiques utilisateur :", error);
     throw error;
   }
 }

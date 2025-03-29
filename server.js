@@ -1,7 +1,7 @@
-const express = require("express");
-const next = require("next");
-const swaggerUi = require("swagger-ui-express");
-const swaggerSpec = require("./src/config/swagger");
+import express from "express";
+import next from "next";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./src/config/swagger.js";
 
 const dev = process.env.NODE_ENV !== "production";
 const PORT = process.env.PORT || 3000;

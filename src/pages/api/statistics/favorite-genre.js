@@ -84,7 +84,7 @@ export default async function handler(req, res) {
     }
 
     // Vérifie la connexion à la base de données
-    if (!(ensureDatabaseConnection(res))) return;
+    if (!(ensureDatabaseConnection())) return;
 
     // Récupère le genre musical favori de l'utilisateur
     const favoriteGenre = await getUserFavoriteGenre(userId);
@@ -97,6 +97,7 @@ export default async function handler(req, res) {
     // Répond avec le genre musical favori
     return res.status(200).json({ favorite_genre: favoriteGenre });
   } catch (error) {
-    responseError(req, res, error);
+    console.error(error);
+    responseError(res);
   }
 }
