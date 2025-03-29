@@ -1,0 +1,36 @@
+name: Vérification des commits et branches
+
+on:
+  pull_request:
+    branches:
+      - "**"
+jobs:
+  check-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Vérification des messages de commit
+        id: check_commit
+        run: |
+          if git log --format=%B -n 1 | grep -qE "^(feature|fix|bugfix|hotfix|chore|docs|style|refactor|test|perf): .+"; then
+            echo "Message de commit valide."
+            echo "commit_ok=true" >> $GITHUB_ENV
+          else
+            echo "❌❌Mauvais format de commit.❌❌"
+            echo "commit_ok=false" >> $GITHUB_ENV
+          fi
+
+      - name: Vérification du nom de branche
+        id: check_branch
+        run: |
+          BRANCH_NAME=$(echo "${{ github.head_ref }}")
+          if echo "$BRANCH_NAME" | grep -qE "^(feature|fix|bugfix|hotfix|chore|docs|style|refactor|release|test|perf)/.+$"; then
+            echo "Nom de branche valide."
+            echo "branch_ok=true" >> $GITHUB_ENV
+          else
+            echo "❌❌Mauvais format de branche.❌❌"
+            echo "branch_ok=false" >> $GITHUB_ENV
+            exit 1
+          fi
