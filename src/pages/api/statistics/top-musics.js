@@ -1,28 +1,31 @@
-import { getUserTopListenedMusics } from '../../../services/musicStatsService';
-import { 
-  validateMethod,
-  ensureDatabaseConnection,
-  responseError
-} from '../../../services/apiHandlerService';
+/**
+ * @fileoverview Endpoint API pour récupérer les 3 musiques les plus écoutées par un utilisateur.
+ * Utilise le repository Mongo pour extraire les musiques les mieux classées d’un utilisateur.
+ */
 
+import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
+import connectToDatabase from 'infrastructure/database/mongooseClient.js';
+import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusicRepository.js';
+import MusicStatsService from 'core/services/musicStatsService.js';
 
 /**
  * @swagger
  * /api/statistics/top-musics:
  *   get:
  *     summary: Récupère les 3 musiques les plus écoutées par un utilisateur
- *     description: Retourne la liste des musiques les plus écoutées par un utilisateur,
- *                  classées par écoutes.
+ *     description: |
+ *       Retourne la liste des musiques les plus écoutées par un utilisateur donné,
+ *       triées par classement (1 à 3).
  *     parameters:
- *       - name: userId
- *         in: query
+ *       - in: query
+ *         name: userId
  *         required: true
- *         description: Identifiant unique de l'utilisateur.
+ *         description: Identifiant unique de l'utilisateur
  *         schema:
  *           type: string
  *     responses:
  *       200:
- *         description: Succès - Retourne la liste des musiques les plus écoutées par l'utilisateur.
+ *         description: Succès - Liste des musiques trouvée
  *         content:
  *           application/json:
  *             schema:
@@ -41,18 +44,18 @@ import {
  *                         type: string
  *                         maxLength: 255
  *                         description: Le nom d'une des musiques les plus écoutées par l'utilisateur
- *                         example: "Nom Musique"
+ *                         example: "Blinding Lights"
  *                       artist_name:
  *                         type: string
  *                         maxLength: 255
  *                         description: Le nom de l'artiste de la musique
- *                         example: "Nom Artiste"
+ *                         example: "The Weeknd"
  *                       ranking:
- *                         type: Number
+ *                         type: integer
  *                         description: Le classement de la musique
  *                         example: 1
  *       400:
- *         description: Requête invalide - `userId` manquant.
+ *         description: Requête invalide - `userId` manquant
  *         content:
  *           application/json:
  *             schema:
@@ -60,9 +63,9 @@ import {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Requête invalide - `userId` manquant.
+ *                   example: "userId manquant"
  *       404:
- *         description: Aucun musique trouvée pour cet utilisateur.
+ *         description: Aucune musique trouvée pour cet utilisateur
  *         content:
  *           application/json:
  *             schema:
@@ -70,9 +73,9 @@ import {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Aucune musique trouvée pour cet utilisateur.
+ *                   example: "Aucune musique trouvée."
  *       500:
- *         description: Erreur interne du serveur.
+ *         description: Erreur interne du serveur
  *         content:
  *           application/json:
  *             schema:
@@ -80,43 +83,41 @@ import {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Erreur interne du serveur.
+ *                   example: "Erreur interne du serveur."
  */
 
 /**
- * Gestionnaire de requête pour récupérer les musiques les plus écoutées par un utilisateur.
- * 
- * @param {import('next').NextApiRequest} req - Objet de la requête HTTP.
- * @param {import('next').NextApiResponse} res - Objet de la réponse HTTP.
- * @returns {Promise<void>} - Retourne une réponse JSON contenant les musiques les plus écoutées.
+ * Handler API GET `/api/statistics/top-musics`
+ *
+ * @param {Object} req - Requête HTTP entrante
+ * @param {Object} res - Réponse HTTP sortante
+ * @returns {Promise<void>} - Liste des musiques top 3 écoutées par l'utilisateur
  */
 export default async function handler(req, res) {
+  // Vérifie la méthode HTTP
+  if (!validateMethod(req, res)) return;
+
+  const { userId } = req.query;
+
+  // Vérifie le paramètre requis
+  if (!userId) return res.status(400).json({ error: 'userId manquant' });
+
   try {
-    // Vérifie si la méthode HTTP est autorisée
-    if (!validateMethod(req, res)) return;
+    // Connexion à la base de données
+    await connectToDatabase();
 
-    const { userId } = req.query;
+    // Appelle le service pour récupérer les musiques
+    const service = new MusicStatsService({
+      musicRepo: new MongoTopMusicRepository()
+    });
 
-    // Vérifie si l'identifiant de l'utilisateur est fourni
-    if (!userId) {
-      return res.status(400).json({ error: "Requête invalide - `userId` manquant" });
-    }
+    const musics = await service.getUserTopListenedMusics(userId);
 
-    // Vérifie la connexion à la base de données
-    if (!(ensureDatabaseConnection())) return;
+    if (!musics?.length) return res.status(404).json({ error: 'Aucune musique trouvée.' });
 
-    // Récupération des musiques les plus écoutées
-    const topMusics = await getUserTopListenedMusics(userId);
-
-    // Vérifie si des musiques ont été trouvées
-    if (!topMusics || topMusics.length === 0) {
-      return res.status(404).json({ error: "Aucun musique trouvée pour cet utilisateur." });
-    }
-
-    // Répond avec la liste des musiques les plus écoutées
-    return res.status(200).json({ top_listened_musics: topMusics });
-  } catch (error) {
-    console.error(error);
+    res.status(200).json({ top_listened_musics: musics });
+  } catch (e) {
+    console.error(e);
     responseError(res);
   }
 }

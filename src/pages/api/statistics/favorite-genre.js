@@ -1,27 +1,29 @@
-import { getUserFavoriteGenre } from '../../../services/musicStatsService';
-import { 
-  validateMethod,
-  ensureDatabaseConnection,
-  responseError
-} from '../../../services/apiHandlerService';
+/**
+ * @fileoverview Endpoint API pour récupérer le genre musical préféré d’un utilisateur.
+ * Fait appel au service métier `MusicStatsService` et au repository MongoDB.
+ */
+
+import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
+import connectToDatabase from 'infrastructure/database/mongooseClient.js';
+import MongoUserStatsRepository from 'infrastructure/database/mongo/MongoUserStatsRepository.js';
+import MusicStatsService from 'core/services/musicStatsService.js';
 
 /**
  * @swagger
  * /api/statistics/favorite-genre:
  *   get:
- *     summary: Récupère le genre musical favori d'un utilisateur
- *     description: Retourne le genre musical favori
- *                  en fonction des artistes les plus écoutés par l'utilisateur.
+ *     summary: Récupère le genre musical favori d’un utilisateur
+ *     description: Retourne le genre musical le plus fréquent écouté par l'utilisateur.
  *     parameters:
- *       - name: userId
- *         in: query
+ *       - in: query
+ *         name: userId
  *         required: true
  *         description: Identifiant unique de l'utilisateur.
  *         schema:
  *           type: string
  *     responses:
  *       200:
- *         description: Succès - Retourne le genre favori de l'utilisateur.
+ *         description: Succès - Genre musical trouvé
  *         content:
  *           application/json:
  *             schema:
@@ -31,9 +33,9 @@ import {
  *                   type: string
  *                   maxLength: 255
  *                   description: Le genre musical préféré de l'utilisateur
- *                   example: "spotify"
+ *                   example: "pop"
  *       400:
- *         description: Requête invalide - `userId` manquant.
+ *         description: Requête invalide - userId manquant
  *         content:
  *           application/json:
  *             schema:
@@ -41,9 +43,9 @@ import {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Requête invalide - `userId` manquant.
+ *                   example: "userId manquant"
  *       404:
- *         description: Aucun genre musical trouvé pour cet utilisateur.
+ *         description: Aucun genre trouvé pour cet utilisateur
  *         content:
  *           application/json:
  *             schema:
@@ -51,9 +53,9 @@ import {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Aucun genre musical trouvé pour cet utilisateur.
+ *                   example: "Aucun genre trouvé."
  *       500:
- *         description: Erreur interne du serveur.
+ *         description: Erreur interne du serveur
  *         content:
  *           application/json:
  *             schema:
@@ -61,43 +63,41 @@ import {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Erreur interne du serveur.
+ *                   example: "Erreur interne du serveur."
  */
 
 /**
- * Gestionnaire de requête pour récupérer le genre musical favori d'un utilisateur.
- * 
- * @param {import('next').NextApiRequest} req - Objet de la requête HTTP.
- * @param {import('next').NextApiResponse} res - Objet de la réponse HTTP.
- * @returns {Promise<void>} - Retourne une réponse JSON contenant le genre favori.
+ * Handler API GET `/api/statistics/favorite-genre`
+ *
+ * @param {Object} req - Requête HTTP entrante
+ * @param {Object} res - Réponse HTTP sortante
+ * @returns {Promise<void>} Réponse JSON contenant le genre favori
  */
 export default async function handler(req, res) {
+  // Vérifie la méthode HTTP
+  if (!validateMethod(req, res)) return;
+
+  const { userId } = req.query;
+
+  // Vérifie le paramètre requis
+  if (!userId) return res.status(400).json({ error: 'userId manquant' });
+
   try {
-    // Vérifie si la méthode HTTP est autorisée
-    if (!validateMethod(req, res)) return;
+    // Connexion à la base de données
+    await connectToDatabase();
 
-    const { userId } = req.query;
+    // Service + repo injectés
+    const service = new MusicStatsService({
+      userStatsRepo: new MongoUserStatsRepository()
+    });
 
-    // Vérifie si l'identifiant de l'utilisateur est fourni
-    if (!userId) {
-      return res.status(400).json({ error: "Requête invalide - `userId` manquant" });
-    }
+    const genre = await service.getFavoriteGenre(userId);
 
-    // Vérifie la connexion à la base de données
-    if (!(ensureDatabaseConnection())) return;
+    if (!genre) return res.status(404).json({ error: 'Aucun genre trouvé.' });
 
-    // Récupère le genre musical favori de l'utilisateur
-    const favoriteGenre = await getUserFavoriteGenre(userId);
-
-    // Vérifie si un genre musical a été trouvé
-    if (!favoriteGenre) {
-      return res.status(404).json({ error: "Aucun genre musical trouvé pour cet utilisateur." });
-    }
-
-    // Répond avec le genre musical favori
-    return res.status(200).json({ favorite_genre: favoriteGenre });
-  } catch (error) {
-    console.error(error);
+    res.status(200).json({ favorite_genre: genre });
+  } catch (e) {
+    console.error(e);
     responseError(res);
   }
 }

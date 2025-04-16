@@ -1,34 +1,31 @@
 import express from "express";
 import next from "next";
 import swaggerUi from "swagger-ui-express";
-import swaggerSpec from "./src/config/swagger.js";
+import swaggerSpec from "./src/config/swaggerConfig.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const dev = process.env.NODE_ENV !== "production";
 const PORT = process.env.PORT || 3000;
+
 const app = next({ dev });
 const handle = app.getRequestHandler();
-
 const server = express();
 
-// Parsage des requêtes JSON et URL encodées
-server.use(express.json());
-server.use(express.urlencoded({ extended: true }));
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Documentation Swagger disponible sur /api-docs
 server.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// Laisse Next.js gérer tout le reste (pages + SSR)
 app.prepare()
   .then(() => {
-    // Gestion des routes API et Next.js
     server.all("*", (req, res) => handle(req, res));
-
-    // Lancement du serveur
     server.listen(PORT, () => {
-      console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
-      console.log(`📄 Documentation Swagger : http://localhost:${PORT}/api-docs`);
+      console.log(`🚀 Serveur prêt sur http://localhost:${PORT}`);
+      console.log(`📄 Swagger UI : http://localhost:${PORT}/api-docs`);
     });
   })
   .catch((err) => {
-    console.error("❌ Erreur lors du démarrage du serveur :", err);
+    console.error("Erreur au démarrage du serveur :", err);
     process.exit(1);
   });

@@ -1,26 +1,26 @@
-import swaggerJSDoc from "swagger-jsdoc";
-import path from "path";
+import swaggerJSDoc from 'swagger-jsdoc';
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Définition des options Swagger
-const options = {
+// Configuration Swagger (OpenAPI 3)
+const swaggerOptions = {
   definition: {
-    openapi: "3.0.0",
+    openapi: '3.0.0',
     info: {
-      title: "Music Statistics API",
-      version: "1.2.0",
-      description: "API de gestion des statistiques musicales d'un utilisateur.",
+      title: 'Music Statistics API',
+      version: '1.0.0',
+      description: 'API de gestion des statistiques musicales utilisateur via différentes plateformes.',
       contact: {
-        name: "Support API",
-        email: "support@musicstats.com",
+        name: 'Support API',
+        email: 'support@musicstats.com',
       },
     },
     servers: [
       {
-        url: process.env.BASE_URL || "http://localhost:3000",
-        description: "Serveur de développement",
+        url: process.env.BASE_URL || 'http://localhost:3000',
+        description: 'Serveur de développement',
       },
     ],
     components: {
@@ -77,8 +77,7 @@ const options = {
   apis: [path.resolve(__dirname, "../pages/api/**/*.js")],
 };
 
-// Génération du Swagger
-const swaggerSpec = swaggerJSDoc(options);
+// Génération du document Swagger (utilisable pour SwaggerUI)
+const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
-// Exportation
 export default swaggerSpec;

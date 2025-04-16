@@ -1,48 +1,51 @@
-import { getArtistByUserAndRanking } from '../../../../services/musicStatsService';
-import { 
-  validateMethod,
-  ensureDatabaseConnection,
-  responseError
-} from '../../../../services/apiHandlerService';
+/**
+ * @fileoverview Endpoint API pour récupérer un artiste spécifique du top 3 d’un utilisateur.
+ * Utilise un repository MongoDB pour accéder aux données, selon l’architecture Clean.
+ */
+
+import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
+import connectToDatabase from 'infrastructure/database/mongooseClient.js';
+import MongoTopArtistRepository from 'infrastructure/database/mongo/MongoTopArtistRepository.js';
+import MusicStatsService from 'core/services/musicStatsService.js';
 
 /**
  * @swagger
- * /api/statistics/rankings/artist:
+ * /api/statistics/ranking/artist:
  *   get:
- *     summary: Récupère un artiste spécifique du top 3 écouté par un utilisateur
- *     description: Retourne le nom de l'artiste en fonction de son classement 
- *                  dans le top 3 des artistes les plus écoutés par un utilisateur donné.
+ *     summary: Récupère un artiste faisant parti du du top 3 des plus écoutés par l'utilisateur
+ *     description: |
+ *       Permet de récupérer le nom d'un artiste parmi les 3 les plus écoutés par un utilisateur donné,
+ *       en fonction de son classement (1 à 3).
  *     parameters:
- *       - name: userId
- *         in: query
+ *       - in: query
+ *         name: userId
  *         required: true
- *         description: Identifiant unique de l'utilisateur.
+ *         description: Identifiant unique de l'utilisateur
  *         schema:
  *           type: string
- *       - name: ranking
- *         in: query
+ *       - in: query
+ *         name: ranking
  *         required: true
- *         description: Classement de l'artiste (1, 2 ou 3).
+ *         description: Classement de l'artiste dans le top 3 (1, 2 ou 3)
  *         schema:
- *           type: Number
+ *           type: integer
  *           minimum: 1
  *           maximum: 3
  *     responses:
  *       200:
- *         description: Succès - Retourne le nom de l'artiste correspondant au classement donné.
+ *         description: Succès - Nom de l'artiste trouvé
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
  *                 artist_name:
- *                   type: String
+ *                   type: string
  *                   maxLength: 255
  *                   description: Le nom de l'artiste correspondant au classsement donné
- *                   example: "nom artiste"
+ *                   example: "The Weeknd"
  *       400:
- *         description: Requête invalide - `userId` et/ou `ranking` manquant(s),
- *                      Requête invalide - `ranking` doit être compris entre 1 et 3.
+ *         description: Requête invalide (paramètre manquant ou invalide)
  *         content:
  *           application/json:
  *             schema:
@@ -50,9 +53,9 @@ import {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Requête invalide - `userId` et/ou `ranking` manquant(s).
+ *                   example: "userId et/ou ranking manquant(s)"
  *       404:
- *         description: Aucun artiste trouvé pour cet utilisateur et ce classement.
+ *         description: Aucun artiste trouvé pour cet utilisateur et ce classement
  *         content:
  *           application/json:
  *             schema:
@@ -60,9 +63,9 @@ import {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Aucun artiste trouvé pour cet utilisateur et ce classement.
+ *                   example: "Aucun artiste trouvé."
  *       500:
- *         description: Erreur interne du serveur.
+ *         description: Erreur interne du serveur
  *         content:
  *           application/json:
  *             schema:
@@ -70,50 +73,41 @@ import {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Erreur interne du serveur.
+ *                   example: "Erreur interne du serveur."
  */
 
 /**
- * Gestionnaire de requête pour récupérer un artiste du top 3 écouté par un utilisateur.
- * 
- * @param {import('next').NextApiRequest} req - Objet de la requête HTTP.
- * @param {import('next').NextApiResponse} res - Objet de la réponse HTTP.
- * @returns {Promise<void>} - Retourne une réponse JSON contenant le nom de l'artiste.
+ * Handler API GET `/api/statistics/rankings/artist`
+ *
+ * @param {Object} req - Objet de la requête HTTP
+ * @param {Object} res - Objet de la réponse HTTP
+ * @returns {Promise<void>} - Résultat de la requête, JSON
  */
 export default async function handler(req, res) {
+  // Vérifie la méthode HTTP
+  if (!validateMethod(req, res)) return;
+
+  const { userId, ranking } = req.query;
+
+  // Vérifie les paramètres requis
+  if (!userId || !ranking) return res.status(400).json({ error: 'userId et/ou ranking manquant(s)' });
+
   try {
-    // Vérifie si la méthode HTTP est autorisée
-    if (!validateMethod(req, res)) return;
+    // Connexion à la base de données
+    await connectToDatabase();
 
-    const { userId, ranking } = req.query;
-    
-    // Vérifie si les paramètres requis sont fournis
-    if (!userId || !ranking) {
-      return res.status(400).json({ error: "Requête invalide - `userId` et/ou `ranking` manquant(s)" });
-    }
+    // Appelle le service pour récupérer l'artiste classé N
+    const musicStatsService = new MusicStatsService({
+      artistRepo: new MongoTopArtistRepository()
+    });
 
-    const rankingNumber = parseInt(ranking);
+    const artist = await musicStatsService.getArtistByRanking(userId, parseInt(ranking));
 
-    // Vérifie si le classement est valide (entre 1 et 3)
-    if(rankingNumber < 1 || rankingNumber > 3) {
-      return res.status(400).json({ error: "Requête invalide - `ranking` doit être compris entre 1 et 3" });
-    }
+    if (!artist) return res.status(404).json({ error: 'Aucun artiste trouvé.' });
 
-    // Vérifie la connexion à la base de données
-    if (!ensureDatabaseConnection()) return;
-
-    // Récupère l'artiste en fonction du classement
-    const artistName = await getArtistByUserAndRanking(userId, rankingNumber);
-
-    // Vérifie si un artiste a été trouvé
-    if (!artistName) {
-      return res.status(404).json({ error: "Aucun artiste trouvé pour cet utilisateur et ce classement." });
-    }
-
-    // Répond avec le nom de l'artiste
-    return res.status(200).json({ artist_name: artistName });
-  } catch (error) {
-    console.error(error);
+    res.status(200).json({ artist_name: artist.artist_name });
+  } catch (e) {
+    console.error(e);
     responseError(res);
   }
 }
