@@ -91,7 +91,6 @@ import { generateSpotifyAuthUrl, decodeSpotifyState } from 'infrastructure/servi
  *                   example: "Erreur interne du serveur."
  */
 
-
 /**
  * Handler API GET `/api/statistics`
  *

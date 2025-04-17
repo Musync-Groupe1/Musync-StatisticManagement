@@ -20,7 +20,7 @@ export default class MongoTopArtistRepository extends TopArtistRepository {
    */
   async findAllByUserId(userId) {
     return TopListenedArtist.find({ user_id: userId })
-        .select('-_id -__v -user_id')
+        .select('-_id -__v -user_id -createdAt -updatedAt')
         .sort({ ranking: 1 })
         .lean();
   }

@@ -2,7 +2,12 @@
  * @fileoverview Cas d'utilisation pour récupérer et sauvegarder les statistiques musicales
  * d'un utilisateur en utilisant une stratégie (ex : Spotify, Apple Music...).
  * Applique les principes de Clean Architecture : le UseCase dépend de l’abstraction, pas de l’implémentation.
+ * 
+ * Intègre également une publication Kafka sur le topic "statistic" pour notifier
+ * les autres services (ex: RelationshipManagement) de la mise à jour des données.
  */
+
+import { publishStatUpdated } from 'core/events/producers/StatUpdatedProducer.js';
 
 export default class FetchUserMusicStats {
 
@@ -51,6 +56,21 @@ export default class FetchUserMusicStats {
       music_platform: 'spotify',
       top_listened_artists: savedArtists.map(a => a._id),
       top_listened_musics: savedMusics.map(m => m._id),
+    });
+
+    // Publication d’un événement Kafka
+    await publishStatUpdated({
+      userId: this.userId,
+      favorite_genre: favoriteGenre,
+      top_artists: savedArtists.map(a => ({
+        artist_name: a.artist_name,
+        ranking: a.ranking
+      })),
+      top_musics: savedMusics.map(m => ({
+        music_name: m.music_name,
+        artist_name: m.artist_name,
+        ranking: m.ranking
+      }))
     });
 
     return { savedArtists, savedMusics };

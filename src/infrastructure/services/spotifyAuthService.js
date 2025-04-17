@@ -6,7 +6,7 @@ const {
   SPOTIFY_CLIENT_ID,
   SPOTIFY_REDIRECT_URI
 } = process.env;
-  
+
 /**
  * Génère une URL d'autorisation Spotify avec les bons paramètres OAuth.
  * Utilise un `state` encodé en base64 contenant `userId` et `platform`.
@@ -17,7 +17,7 @@ const {
  */
 export function generateSpotifyAuthUrl(userId, platform) {
   const encodedState = Buffer.from(JSON.stringify({ userId, platform })).toString('base64');
-  
+
   const authUrl = new URL('https://accounts.spotify.com/authorize');
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('client_id', SPOTIFY_CLIENT_ID);
@@ -27,7 +27,7 @@ export function generateSpotifyAuthUrl(userId, platform) {
   
   return authUrl.toString();
 }
-  
+
 /**
  * Décode et parse le paramètre `state` encodé en base64 envoyé par Spotify
  * @param {string} encodedState
@@ -36,9 +36,9 @@ export function generateSpotifyAuthUrl(userId, platform) {
  */
 export function decodeSpotifyState(encodedState) {
   try {
-    const decoded = Buffer.from(encodedState, 'base64').toString();
-    return JSON.parse(decoded);
+    return JSON.parse(Buffer.from(encodedState, 'base64').toString());
   } catch (error) {
+    console.error(error);
     throw new Error('Paramètre `state` invalide.');
   }
-}  
+}

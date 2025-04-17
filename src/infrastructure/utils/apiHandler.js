@@ -13,7 +13,7 @@ export function validateMethod(req, res, allowedMethods = ['GET']) {
     }
     return true;
 }
-  
+
 /**
  * Définit des en-têtes de sécurité de base
  * @param {Object} res
@@ -24,7 +24,7 @@ export function setSecurityHeaders(res) {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 }
-  
+
 /**
  * Gère les erreurs serveur avec retard aléatoire (anti-bruteforce)
  * @param {Object} res
@@ -34,4 +34,4 @@ export function responseError(res) {
   setTimeout(() => {
     res.status(500).json({ error: 'Erreur interne du serveur.' });
   }, delay);
-}  
+}

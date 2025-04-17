@@ -1,4 +1,4 @@
-/// <reference path="../../types/repositories.d.ts" />
+import '../../types/repositories.d.ts';
 
 /**
  * @fileoverview Service métier pour la gestion des statistiques musicales d’un utilisateur.

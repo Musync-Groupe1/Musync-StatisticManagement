@@ -10,7 +10,7 @@ import MusicStatsService from 'core/services/musicStatsService.js';
 
 /**
  * @swagger
- * /api/statistics/rankings/music:
+ * /api/statistics/ranking/music:
  *   get:
  *     summary: Récupère une musique faisant parti du du top 3 des plus écoutées par l'utilisateur
  *     description: |
