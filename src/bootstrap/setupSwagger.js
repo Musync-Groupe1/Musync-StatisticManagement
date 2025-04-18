@@ -10,14 +10,7 @@ import swaggerSpec from '../config/swaggerConfig.js';
  * Monte la documentation Swagger UI sur le serveur Express.
  *
  * @function setupSwaggerDocs
- * @param {import('express').Express} server - Instance du serveur Express
- *
- * @example
- * import express from 'express';
- * import { setupSwaggerDocs } from './setupSwagger.js';
- *
- * const app = express();
- * setupSwaggerDocs(app);
+ * @param {Express} server - Instance du serveur Express
  */
 export function setupSwaggerDocs(server) {
   server.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

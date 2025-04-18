@@ -5,11 +5,7 @@
 
 import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
 import connectToDatabase from 'infrastructure/database/mongooseClient.js';
-
-import UserCleanupService from 'core/services/userCleanupService.js';
-import MongoUserStatsRepository from 'infrastructure/database/mongo/MongoUserStatsRepository.js';
-import MongoTopArtistRepository from 'infrastructure/database/mongo/MongoTopArtistRepository.js';
-import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusicRepository.js';
+import { createUserCleanupService } from 'core/factories/userCleanupServiceFactory.js';
 
 /**
  * @swagger
@@ -62,32 +58,50 @@ import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusic
  *                   example: "Erreur interne du serveur."
  */
 
-export default async function handler(req, res) {
-  // Vérifie la méthode HTTP
-  if (!validateMethod(req, res, ['DELETE'])) return;
-
-  const { userId } = req.query;
-
+/**
+ * Fonction métier qui exécute la suppression et retourne un objet de réponse.
+ * @param {string} userId - ID utilisateur
+ * @returns {{ status: number, body: object }} - Code HTTP + corps de réponse
+ */
+export async function cleanupUserStatsHandler(userId) {
   if (!userId) {
-    return res.status(400).json({ error: 'Le champ `userId` est requis.' });
+    return { status: 400, body: { error: 'Le champ `userId` est requis.' } };
   }
 
+  const connected = await connectToDatabase();
+  if (!connected) {
+    return { status: 500, body: { error: 'Erreur de connexion à la base de données.' } };
+  }
+
+  const service = createUserCleanupService();
+
   try {
-    await connectToDatabase();
-
-    const service = new UserCleanupService({
-      userStatsRepo: new MongoUserStatsRepository(),
-      artistRepo: new MongoTopArtistRepository(),
-      musicRepo: new MongoTopMusicRepository(),
-    });
-
     await service.deleteAllUserData(userId);
-
-    return res.status(200).json({
-      message: 'Toutes les données utilisateur ont été supprimées.'
-    });
+    return {
+      status: 200,
+      body: { message: 'Toutes les données utilisateur ont été supprimées.' }
+    };
   } catch (error) {
-    console.error('Erreur dans /api/statistics/cleanup :', error);
+    console.error('Erreur dans /api/statistics/deleteUserStats :', error);
+    return {
+      status: 500,
+      body: { error: 'Erreur interne du serveur.' }
+    };
+  }  
+}
+
+/**
+ * Handler API Next.js
+ */
+export default async function handler(req, res) {
+  if (!validateMethod(req, res, ['DELETE'])) return;
+
+  try {
+    const { userId } = req.query;
+    const result = await cleanupUserStatsHandler(userId);
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    console.error('Erreur dans /api/statistics/deleteUserStats :', error);
     responseError(res);
   }
 }

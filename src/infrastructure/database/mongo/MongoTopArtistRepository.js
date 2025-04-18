@@ -43,12 +43,6 @@ export default class MongoTopArtistRepository extends TopArtistRepository {
    * @param {string|number} userId - Identifiant utilisateur
    * @param {Array<Object>} artistsArray - Liste des artistes à insérer ou mettre à jour
    * @returns {Promise<Array<Object>>} Liste des artistes sauvegardés
-   *
-   * @example
-   * await repo.upsertMany(42, [
-   *   { artist_name: 'Drake', ranking: 1 },
-   *   { artist_name: 'Kendrick Lamar', ranking: 2 },
-   * ]);
    */
   async upsertMany(userId, artistsArray) {
     return Promise.all(
@@ -67,14 +61,6 @@ export default class MongoTopArtistRepository extends TopArtistRepository {
    *
    * @param {string|number} userId - Identifiant de l'utilisateur
    * @returns {Promise<number>} Nombre de documents supprimés
-   *
-   * @example
-   * const deleted = await repo.deleteAllByUserId(99);
-   * if (deleted > 0) {
-   *   console.log(`${deleted} artistes supprimés.`);
-   * } else {
-   *   console.log('Aucun artiste à supprimer.');
-   * }
    */
   async deleteAllByUserId(userId) {
     const res = await TopListenedArtist.deleteMany({ user_id: userId });

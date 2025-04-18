@@ -55,14 +55,6 @@ export default class MongoUserStatsRepository extends UserStatsRepository {
    *
    * @param {string|number} userId - Identifiant unique de l’utilisateur
    * @returns {Promise<number>} Nombre de documents supprimés (0 ou 1)
-   *
-   * @example
-   * const deletedCount = await repo.deleteByUserId(42);
-   * if (deletedCount > 0) {
-   *   console.log('Statistiques supprimées');
-   * } else {
-   *   console.log('Aucune donnée à supprimer');
-   * }
    */
   async deleteByUserId(userId) {
     const res = await UserStats.deleteOne({ user_id: userId });

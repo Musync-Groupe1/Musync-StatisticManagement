@@ -14,6 +14,7 @@ const kafka = new Kafka({
 });
 
 // Producteur Kafka unique pour toute l'application
+/** @type {KafkaProducer|null} */
 let _producer = null;
 
 /**
@@ -38,7 +39,7 @@ export const initKafka = async () => {
  *
  * @async
  * @function getKafkaProducer
- * @returns {Promise<import('kafkajs').Producer>} Instance du producteur Kafka
+ * @returns {Promise<KafkaProducer>} Instance du producteur Kafka
  */
 export const getKafkaProducer = async () => {
   if (!_producer) {

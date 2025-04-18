@@ -64,7 +64,7 @@ const swaggerOptions = {
             favorite_genre: { type: "string", example: "Rock", description: "Genre musical favori de l'utilisateur." },
             music_platform: { 
               type: "string", 
-              enum: ["spotify", "appleMusic"], 
+              enum: ["spotify", "deezer"], 
               example: "spotify",
               description: "Plateforme de musique utilisée par l'utilisateur."
             },

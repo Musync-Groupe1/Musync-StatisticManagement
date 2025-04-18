@@ -48,8 +48,8 @@ async function startServer() {
 
     // Démarrage du serveur sur le port spécifié
     server.listen(PORT, () => {
-      console.log(`🚀 Serveur prêt sur http://localhost:${PORT}`);
-      console.log(`📄 Swagger UI : http://localhost:${PORT}/api-docs`);
+      console.log(`Serveur prêt sur http://localhost:${PORT}`);
+      console.log(`Swagger UI : http://localhost:${PORT}/api-docs`);
     });
   } catch (err) {
     console.error("Erreur au démarrage du serveur :", err);

@@ -71,14 +71,6 @@ export default class MongoTopMusicRepository extends TopMusicRepository {
    *
    * @param {string|number} userId - Identifiant de l'utilisateur
    * @returns {Promise<number>} Nombre de documents supprimés
-   *
-   * @example
-   * const deleted = await repo.deleteAllByUserId(101);
-   * if (deleted > 0) {
-   *   console.log(`${deleted} musiques supprimées.`);
-   * } else {
-   *   console.log('Aucune musique à supprimer.');
-   * }
    */
   async deleteAllByUserId(userId) {
     const res = await TopListenedMusic.deleteMany({ user_id: userId });

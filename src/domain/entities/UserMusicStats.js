@@ -40,7 +40,7 @@ export default class UserMusicStats {
    * @returns {boolean} - `true` si l'objet est complet, sinon `false`
    */
   isComplete() {
-    return (
+    return Boolean(
       this.favoriteGenre &&
       this.musicPlatform &&
       Array.isArray(this.topArtists) &&

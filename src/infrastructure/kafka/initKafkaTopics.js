@@ -36,7 +36,7 @@ export async function initKafkaTopics() {
     try {
       console.log('[Kafka] Connexion à Kafka (admin)...');
       await admin.connect();
-      console.log('[Kafka] Connecté ✅');
+      console.log('[Kafka] Connecté');
 
       const topics = await admin.listTopics();
 

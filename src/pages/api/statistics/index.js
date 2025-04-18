@@ -1,6 +1,6 @@
 /**
  * @fileoverview Endpoint API pour récupérer et stocker les statistiques musicales d’un utilisateur.
- * Utilise le pattern Strategy + UseCase pour s’adapter à plusieurs plateformes de streaming (Spotify, AppleMusic...).
+ * Utilise le pattern Strategy + UseCase pour s’adapter à plusieurs plateformes de streaming (Spotify, Deezer...).
  * La logique OAuth (redirection, code, state) est gérée pour Spotify.
  */
 
@@ -146,7 +146,7 @@ export default async function handler(req, res) {
     // Obtiens la stratégie adaptée (Spotify, Deezer…) pour récupération des stats
     const strategy = await getPlatformStrategy(resolvedPlatform, code);
 
-    // Éxécute le use case principal avec les bons repositories
+    // Exécute le use case principal avec les bons repositories
     const usecase = new FetchUserMusicStats({
       strategy,
       userId: resolvedUserId,
@@ -162,7 +162,6 @@ export default async function handler(req, res) {
       top_artists_saved: result.savedArtists.length,
       top_musics_saved: result.savedMusics.length
     });
-
   } catch (error) {
     console.error('Erreur dans /api/statistics :', error);
     responseError(res);
