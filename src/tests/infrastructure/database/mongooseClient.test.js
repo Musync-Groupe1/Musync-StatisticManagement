@@ -30,6 +30,18 @@ const mongoose = await import('mongoose').then(m => m.default);
 const connectToDatabase = (await import('infrastructure/database/mongooseClient.js')).default;
 
 describe('connectToDatabase', () => {
+  let consoleLogSpy, consoleErrorSpy;
+
+  beforeAll(() => {
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    consoleLogSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
   });

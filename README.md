@@ -72,7 +72,7 @@ Un dossier `docs` sera généré, dans lequel vous aurez un fichier `index.html`
 
 ## 🔌 Endpoints
 
-### 📌 **1. Sauvegarder les statistiques d'un utilisateur **
+### 📌 **1. Sauvegarder les statistiques musicales d'un utilisateur**
 ```http
 GET /api/statistics?userId={user_id}&platform=spotify
 ```

@@ -1,96 +1,134 @@
 import httpMocks from 'node-mocks-http';
 import { jest } from '@jest/globals';
 
-// Mocks dynamiques
+// Mock dynamique des dépendances
 jest.unstable_mockModule('infrastructure/database/mongooseClient.js', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
 
-jest.unstable_mockModule('core/factories/userCleanupServiceFactory.js', () => ({
-  __esModule: true,
-  createUserCleanupService: jest.fn()
-}));
+jest.unstable_mockModule('core/services/musicStatsService.js', () => {
+  return {
+    __esModule: true,
+    default: jest.fn().mockImplementation(() => ({
+      getFavoriteGenre: jest.fn(),
+    })),
+  };
+});
 
-/**
- * @description Tests pour l’endpoint DELETE `/api/statistics/deleteUserStats`
- * Cet endpoint supprime toutes les données statistiques liées à un utilisateur.
- */
-describe('/api/statistics/deleteUserStats - DeleteUserStats handler', () => {
-  let handler, connectToDatabase, createUserCleanupService;
+describe('/api/statistics/favorite-genre - GET handler', () => {
+  let handler, connectToDatabase, MusicStatsService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    const handlerModule = await import('pages/api/statistics/deleteUserStats.js');
+    const handlerModule = await import('pages/api/statistics/favorite-genre.js');
     handler = handlerModule.default;
 
     connectToDatabase = (await import('infrastructure/database/mongooseClient.js')).default;
-    createUserCleanupService = (await import('core/factories/userCleanupServiceFactory.js')).createUserCleanupService;
+    MusicStatsService = (await import('core/services/musicStatsService.js')).default;
   });
 
-  /**
-   * GIVEN a GET request (non-DELETE)
-   * WHEN the handler is called
-   * THEN it should return 405 Method Not Allowed
-   */
-  it('shouldReturn405WhenHttpMethodIsNotDelete', async () => {
-    const req = httpMocks.createRequest({ method: 'GET' });
+  it('shouldReturn405ForNonGetMethods', async () => {
+    // GIVEN
+    const req = httpMocks.createRequest({ method: 'POST' });
     const res = httpMocks.createResponse();
 
+    // WHEN
     await handler(req, res);
 
+    // THEN
     expect(res._getStatusCode()).toBe(405);
   });
 
-  /**
-   * GIVEN a DELETE request with no userId in query
-   * WHEN the handler is called
-   * THEN it should return 400 Bad Request
-   */
-  it('shouldReturn400WhenUserIdIsMissingInQuery', async () => {
-    const req = httpMocks.createRequest({ method: 'DELETE', query: {} });
+  it('shouldReturn400WhenUserIdMissing', async () => {
+    // GIVEN
+    const req = httpMocks.createRequest({ method: 'GET', query: {} });
     const res = httpMocks.createResponse();
 
+    // WHEN
     await handler(req, res);
 
+    // THEN
     expect(res._getStatusCode()).toBe(400);
-    expect(res._getData()).toMatch(/userId/);
+    expect(res._getData()).toMatch(/userId manquant/);
   });
 
-  /**
-   * GIVEN a valid DELETE request but Mongo connection fails
-   * WHEN the handler is called
-   * THEN it should return 500 Internal Server Error
-   */
   it('shouldReturn500WhenDatabaseConnectionFails', async () => {
+    // GIVEN
     connectToDatabase.mockResolvedValue(false);
-    const req = httpMocks.createRequest({ method: 'DELETE', query: { userId: '42' } });
+
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42' } });
     const res = httpMocks.createResponse();
 
+    // WHEN
     await handler(req, res);
 
+    // THEN
     expect(res._getStatusCode()).toBe(500);
-    expect(res._getData()).toMatch(/connexion/);
+    expect(res._getData()).toMatch(/Erreur de connexion à la base de données/);
   });
 
-  /**
-   * GIVEN a valid DELETE request and a functional service
-   * WHEN the handler is executed
-   * THEN it should call the cleanup service and return 200 OK
-   */
-  it('shouldCallCleanupServiceAndReturn200WhenSuccess', async () => {
+  it('shouldReturn404IfGenreNotFound', async () => {
+    // GIVEN
     connectToDatabase.mockResolvedValue(true);
-    const deleteAllUserData = jest.fn();
-    createUserCleanupService.mockReturnValue({ deleteAllUserData });
+    MusicStatsService.mockImplementation(() => ({
+      getFavoriteGenre: jest.fn().mockResolvedValue(null),
+    }));
 
-    const req = httpMocks.createRequest({ method: 'DELETE', query: { userId: '42' } });
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '123' } });
     const res = httpMocks.createResponse();
 
+    // WHEN
     await handler(req, res);
 
-    expect(deleteAllUserData).toHaveBeenCalledWith('42');
+    // THEN
+    expect(res._getStatusCode()).toBe(404);
+    expect(res._getData()).toMatch(/Aucun genre trouvé/);
+  });
+
+  it('shouldReturn200WithGenreIfFound', async () => {
+    // GIVEN
+    connectToDatabase.mockResolvedValue(true);
+    MusicStatsService.mockImplementation(() => ({
+      getFavoriteGenre: jest.fn().mockResolvedValue('rock'),
+    }));
+
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '123' } });
+    const res = httpMocks.createResponse();
+
+    // WHEN
+    await handler(req, res);
+
+    // THEN
     expect(res._getStatusCode()).toBe(200);
-    expect(res._getData()).toMatch(/supprimées/);
+    expect(JSON.parse(res._getData())).toEqual(expect.objectContaining({ favorite_genre: 'rock' }));
+  });
+
+  it('shouldReturn500OnUnexpectedError', async () => {
+    // GIVEN
+    connectToDatabase.mockResolvedValue(true);
+    const error = new Error('boom');
+    MusicStatsService.mockImplementation(() => ({
+      getFavoriteGenre: jest.fn().mockRejectedValue(error),
+    }));
+
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '123' } });
+    const res = httpMocks.createResponse({ eventEmitter: (await import('events')).EventEmitter });
+
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    // WHEN
+    await new Promise((resolve) => {
+      res.on('end', () => {
+        // THEN
+        expect(spy).toHaveBeenCalledWith(error);
+        expect(res._getStatusCode()).toBe(500);
+        spy.mockRestore();
+        resolve();
+      });
+
+      handler(req, res);
+    });
   });
 });

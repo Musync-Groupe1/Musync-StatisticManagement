@@ -1,3 +1,5 @@
+import { jest } from '@jest/globals';
+
 describe('spotifyAuthService - OAuth URL & state handling', () => {
   let generateSpotifyAuthUrl;
   let decodeSpotifyState;
@@ -66,8 +68,14 @@ describe('spotifyAuthService - OAuth URL & state handling', () => {
   it('shouldThrowErrorIfStateIsInvalidBase64', () => {
     // GIVEN
     const invalidState = '%%%###***not-valid-base64***###%%%';
-
+  
+    // Intercepter temporairement le log pour ne pas polluer la console
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  
     // WHEN / THEN
     expect(() => decodeSpotifyState(invalidState)).toThrow('Paramètre `state` invalide.');
+  
+    // Remise en état
+    consoleSpy.mockRestore();
   });
 });

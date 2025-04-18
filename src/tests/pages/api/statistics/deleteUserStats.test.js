@@ -12,12 +12,17 @@ jest.unstable_mockModule('core/factories/userCleanupServiceFactory.js', () => ({
   createUserCleanupService: jest.fn()
 }));
 
+jest.unstable_mockModule('core/events/producers/StatDeletedProducer.js', () => ({
+  __esModule: true,
+  publishStatDeleted: jest.fn()
+}));
+
 /**
  * @description Tests pour l'endpoint `DELETE /api/statistics/deleteUserStats`
  * Cet endpoint permet de supprimer toutes les données statistiques liées à un utilisateur.
  */
 describe('/api/statistics/deleteUserStats - DeleteUserStats handler', () => {
-  let handler, connectToDatabase, createUserCleanupService;
+  let handler, connectToDatabase, createUserCleanupService, publishStatDeleted;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -27,6 +32,7 @@ describe('/api/statistics/deleteUserStats - DeleteUserStats handler', () => {
 
     connectToDatabase = (await import('infrastructure/database/mongooseClient.js')).default;
     createUserCleanupService = (await import('core/factories/userCleanupServiceFactory.js')).createUserCleanupService;
+    publishStatDeleted = (await import('core/events/producers/StatDeletedProducer.js')).publishStatDeleted;
   });
 
   /**
@@ -95,7 +101,6 @@ describe('/api/statistics/deleteUserStats - DeleteUserStats handler', () => {
 
     await new Promise((resolve) => {
       res.on('end', () => {
-        // THEN
         expect(consoleSpy).toHaveBeenCalledWith('Erreur dans /api/statistics/deleteUserStats :', error);
         expect(res._getStatusCode()).toBe(500);
         expect(res._getData()).toMatch(/Erreur interne/);
@@ -103,7 +108,6 @@ describe('/api/statistics/deleteUserStats - DeleteUserStats handler', () => {
         resolve();
       });
 
-      // WHEN
       handler(req, res);
     });
   });
@@ -115,16 +119,45 @@ describe('/api/statistics/deleteUserStats - DeleteUserStats handler', () => {
    */
   it('shouldCallCleanupServiceAndReturn200OnSuccess', async () => {
     connectToDatabase.mockResolvedValue(true);
-    const deleteAllUserData = jest.fn();
+
+    const deleteAllUserData = jest.fn().mockResolvedValue({
+      user_stats_deleted: 1,
+      top_artists_deleted: 3,
+      top_musics_deleted: 3
+    });
+
     createUserCleanupService.mockReturnValue({ deleteAllUserData });
+    publishStatDeleted.mockResolvedValue();
 
     const req = httpMocks.createRequest({ method: 'DELETE', query: { userId: '42' } });
+    const res = httpMocks.createResponse({ eventEmitter: (await import('events')).EventEmitter });
+
+    await new Promise((resolve) => {
+      res.on('end', () => {
+        expect(deleteAllUserData).toHaveBeenCalledWith('42');
+        expect(publishStatDeleted).toHaveBeenCalledWith('42');
+        expect(res._getStatusCode()).toBe(200);
+        expect(res._getData()).toMatch(/supprimées/);
+        resolve();
+      });
+
+      handler(req, res);
+    });
+  });
+
+  it('shouldReturn404IfUserDoesNotExist', async () => {
+    connectToDatabase.mockResolvedValue(true);
+
+    const deleteAllUserData = jest.fn().mockResolvedValue(null);
+    createUserCleanupService.mockReturnValue({ deleteAllUserData });
+
+    const req = httpMocks.createRequest({ method: 'DELETE', query: { userId: '999' } });
     const res = httpMocks.createResponse();
 
     await handler(req, res);
 
-    expect(deleteAllUserData).toHaveBeenCalledWith('42');
-    expect(res._getStatusCode()).toBe(200);
-    expect(res._getData()).toMatch(/supprimées/);
+    expect(res._getStatusCode()).toBe(404);
+    expect(res._getData()).toMatch(/Aucune statistique trouvée/);
+    expect(publishStatDeleted).not.toHaveBeenCalled();
   });
 });

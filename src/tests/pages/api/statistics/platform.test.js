@@ -35,7 +35,13 @@ describe('/api/statistics/platform endpoint', () => {
     connectToDatabase = (await import('infrastructure/database/mongooseClient.js')).default;
     MusicStatsService = (await import('core/services/musicStatsService.js')).default;
   });
-
+  beforeAll(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  
+  afterAll(() => {
+    console.error.mockRestore();
+  });
   /**
    * GIVEN : Une méthode HTTP non autorisée
    * WHEN : Le handler est appelé avec une méthode POST

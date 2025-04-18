@@ -38,7 +38,13 @@ describe('/api/statistics/top-artists endpoint', () => {
     connectToDatabase = (await import('infrastructure/database/mongooseClient.js')).default;
     MusicStatsService = (await import('core/services/musicStatsService.js')).default;
   });
-
+  beforeAll(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  
+  afterAll(() => {
+    console.error.mockRestore();
+  });
   it('shouldRejectNonGetMethods', async () => {
     // GIVEN : une requête HTTP non autorisée (POST)
     const req = httpMocks.createRequest({ method: 'POST' });

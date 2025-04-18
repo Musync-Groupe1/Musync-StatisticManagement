@@ -14,6 +14,7 @@ describe('UserCleanupService - deleteAllUserData', () => {
   it('shouldDeleteAllUserDataCorrectly', async () => {
     // GIVEN
     const mockUserStatsRepo = {
+      findByUserId: jest.fn().mockResolvedValue({ user_id: 42 }),
       deleteByUserId: jest.fn().mockResolvedValue(1)
     };
 
@@ -59,6 +60,7 @@ describe('UserCleanupService - deleteAllUserData', () => {
   it('shouldHandleZeroDeletionsGracefully', async () => {
     // GIVEN
     const mockUserStatsRepo = {
+      findByUserId: jest.fn().mockResolvedValue({ user_id: 99 }),
       deleteByUserId: jest.fn().mockResolvedValue(0)
     };
 
@@ -91,5 +93,42 @@ describe('UserCleanupService - deleteAllUserData', () => {
       top_artists_deleted: 0,
       top_musics_deleted: 0
     });
+  });
+
+  /**
+   * GIVEN : Un utilisateur inexistant dans la base
+   * WHEN  : Le service deleteAllUserData est appelé
+   * THEN  : Il doit retourner null et ne pas appeler les méthodes de suppression
+   */
+  it('shouldReturnNullIfUserDoesNotExist', async () => {
+    // GIVEN
+    const mockUserStatsRepo = {
+      findByUserId: jest.fn().mockResolvedValue(null),
+      deleteByUserId: jest.fn()
+    };
+
+    const mockArtistRepo = {
+      deleteAllByUserId: jest.fn()
+    };
+
+    const mockMusicRepo = {
+      deleteAllByUserId: jest.fn()
+    };
+
+    const service = new UserCleanupService({
+      userStatsRepo: mockUserStatsRepo,
+      artistRepo: mockArtistRepo,
+      musicRepo: mockMusicRepo
+    });
+
+    // WHEN
+    const result = await service.deleteAllUserData(404);
+
+    // THEN
+    expect(mockUserStatsRepo.findByUserId).toHaveBeenCalledWith(404);
+    expect(result).toBeNull();
+    expect(mockUserStatsRepo.deleteByUserId).not.toHaveBeenCalled();
+    expect(mockArtistRepo.deleteAllByUserId).not.toHaveBeenCalled();
+    expect(mockMusicRepo.deleteAllByUserId).not.toHaveBeenCalled();
   });
 });

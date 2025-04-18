@@ -84,7 +84,8 @@ export default async function handler(req, res) {
 
   try {
     // Connexion à la base de données
-    await connectToDatabase();
+    const connected = await connectToDatabase();
+    if (!connected) return res.status(500).json({ error: 'Erreur de connexion à la base de données.' });
 
     // Service + repo injectés
     const service = new MusicStatsService({

@@ -1,11 +1,13 @@
 /**
  * @fileoverview Endpoint API pour supprimer toutes les statistiques d’un utilisateur.
  * Supprime les données liées à la plateforme, au genre préféré, au top artistes et musiques.
+ * Envoie un message Kafka `USER_STATS_DELETED` après suppression.
  */
 
 import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
 import connectToDatabase from 'infrastructure/database/mongooseClient.js';
 import { createUserCleanupService } from 'core/factories/userCleanupServiceFactory.js';
+import { publishStatDeleted } from 'core/events/producers/StatDeletedProducer.js';
 
 /**
  * @swagger
@@ -59,9 +61,12 @@ import { createUserCleanupService } from 'core/factories/userCleanupServiceFacto
  */
 
 /**
- * Fonction métier qui exécute la suppression et retourne un objet de réponse.
+ * Fonction métier qui exécute la suppression des statistiques,
+ * uniquement si l'utilisateur existe (logique gérée dans le service).
+ * Kafka est déclenché uniquement si la suppression a lieu.
+ *
  * @param {string} userId - ID utilisateur
- * @returns {{ status: number, body: object }} - Code HTTP + corps de réponse
+ * @returns {{ status: number, body: object }}
  */
 export async function cleanupUserStatsHandler(userId) {
   if (!userId) {
@@ -76,7 +81,19 @@ export async function cleanupUserStatsHandler(userId) {
   const service = createUserCleanupService();
 
   try {
-    await service.deleteAllUserData(userId);
+    const deleted = await service.deleteAllUserData(userId);
+
+    // Si rien n’a été supprimé, cela veut dire que l’utilisateur n’existait pas
+    if (!deleted) {
+      return {
+        status: 404,
+        body: { error: 'Aucune statistique trouvée pour cet utilisateur.' }
+      };
+    }
+
+    // Kafka : seulement si suppression effective
+    await publishStatDeleted(userId);
+
     return {
       status: 200,
       body: { message: 'Toutes les données utilisateur ont été supprimées.' }

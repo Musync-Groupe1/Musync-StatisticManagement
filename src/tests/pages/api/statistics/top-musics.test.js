@@ -34,7 +34,13 @@ describe('/api/statistics/top-musics endpoint', () => {
     connectToDatabase = (await import('infrastructure/database/mongooseClient.js')).default;
     MusicStatsService = (await import('core/services/musicStatsService.js')).default;
   });
-
+  beforeAll(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  
+  afterAll(() => {
+    console.error.mockRestore();
+  });
   it('shouldRejectNonGetMethods', async () => {
     // GIVEN
     const req = httpMocks.createRequest({ method: 'POST' });
