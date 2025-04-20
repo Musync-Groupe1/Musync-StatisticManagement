@@ -25,7 +25,7 @@ import kafkaConfig from 'infrastructure/kafka/kafkaConfig.js';
  */
 export async function publishStatDeleted(userId) {
   if (!userId) {
-    console.warn('[Kafka] userId manquant — suppression non publiée.');
+    console.warn('[Kafka][Producer] userId manquant — suppression non publiée.');
     return;
   }
 
@@ -45,8 +45,8 @@ export async function publishStatDeleted(userId) {
       messages: [message]
     });
 
-    console.log(`[Kafka] Suppression envoyée pour user ${userId}`);
+    console.log(`[Kafka][Producer] Suppression envoyée pour user ${userId}`);
   } catch (error) {
-    console.error('[Kafka] Échec de publication suppression :', error);
+    console.error('[Kafka][Producer] Échec de publication suppression :', error);
   }
 }

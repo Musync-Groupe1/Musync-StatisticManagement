@@ -12,14 +12,12 @@ export default class UserMusicStats {
    * @param {Object} params - Paramètres d'initialisation
    * @param {string|number} params.userId - Identifiant unique de l’utilisateur
    * @param {string|null} params.favoriteGenre - Genre musical favori
-   * @param {string|null} params.musicPlatform - Plateforme de streaming utilisée (ex: "spotify")
    * @param {Array<Object>} [params.topArtists=[]] - Liste des artistes les plus écoutés
    * @param {Array<Object>} [params.topMusics=[]] - Liste des musiques les plus écoutées
    */
-  constructor({ userId, favoriteGenre, musicPlatform, topArtists = [], topMusics = [] }) {
+  constructor({ userId, favoriteGenre, topArtists = [], topMusics = [] }) {
     this.userId = userId;
     this.favoriteGenre = favoriteGenre;
-    this.musicPlatform = musicPlatform;
     this.topArtists = topArtists;     // Array<{ artist_name: string, ranking: number }>
     this.topMusics = topMusics;       // Array<{ music_name: string, artist_name: string, ranking: number }>
   }
@@ -31,7 +29,7 @@ export default class UserMusicStats {
    * @returns {UserMusicStats} - Instance vide de l'entité
    */
   static empty(userId) {
-    return new UserMusicStats({ userId, favoriteGenre: null, musicPlatform: null });
+    return new UserMusicStats({ userId, favoriteGenre: null });
   }
 
   /**
@@ -42,7 +40,6 @@ export default class UserMusicStats {
   isComplete() {
     return Boolean(
       this.favoriteGenre &&
-      this.musicPlatform &&
       Array.isArray(this.topArtists) &&
       Array.isArray(this.topMusics)
     );

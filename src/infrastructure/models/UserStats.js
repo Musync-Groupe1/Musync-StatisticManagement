@@ -15,8 +15,9 @@ const UserMusicStatisticSchema = new mongoose.Schema({
    * Chaque utilisateur ne peut avoir qu’un seul document de statistiques.
    */
   user_id: { 
-    type: Number, 
-    required: true, 
+    type: Number,
+    ref: 'User',
+    required: true,
     unique: true,
     index: true,
   },
@@ -25,12 +26,6 @@ const UserMusicStatisticSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-  },
-  /** Plateforme musicale utilisée pour extraire les données (Spotify, Deezer...). */
-  music_platform: {
-    type: String,
-    required: true,
-    enum: ['spotify', 'deezer'],
   },
   /**
    * Références vers les artistes les plus écoutés.

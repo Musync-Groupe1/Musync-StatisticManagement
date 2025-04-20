@@ -11,11 +11,13 @@ export default class UserCleanupService {
    * @param {UserStatsRepository} deps.userStatsRepo - Repository des stats utilisateur
    * @param {TopArtistRepository} deps.artistRepo - Repository des artistes
    * @param {TopMusicRepository} deps.musicRepo - Repository des musiques
+   * @param {UserRepository} deps.userRepo - Repository des utilisateurs
    */
-  constructor({ userStatsRepo, artistRepo, musicRepo }) {
+  constructor({ userStatsRepo, artistRepo, musicRepo, userRepo }) {
     this.userStatsRepo = userStatsRepo;
     this.artistRepo = artistRepo;
     this.musicRepo = musicRepo;
+    this.userRepo = userRepo;
   }
 
   /**
@@ -25,22 +27,24 @@ export default class UserCleanupService {
    * @returns {Promise<Object|null>} - Résumé des suppressions, ou `null` si utilisateur inexistant
    */
   async deleteAllUserData(userId) {
-    const existingUserStats = await this.userStatsRepo.findByUserId(userId);
+    const userExists = await this.userRepo.exists(userId);
 
     // Aucun utilisateur trouvé, pas de suppression
-    if (!existingUserStats) return null;
+    if (!userExists) return null;
 
     // Suppression effective
-    const [userStatsDeleted, artistsDeleted, musicsDeleted] = await Promise.all([
+    const [userStatsDeleted, artistsDeleted, musicsDeleted, userDeleted] = await Promise.all([
       this.userStatsRepo.deleteByUserId(userId),
       this.artistRepo.deleteAllByUserId(userId),
-      this.musicRepo.deleteAllByUserId(userId)
+      this.musicRepo.deleteAllByUserId(userId),
+      this.userRepo.deleteByUserId(userId)
     ]);
 
     return {
       user_stats_deleted: userStatsDeleted,
       top_artists_deleted: artistsDeleted,
-      top_musics_deleted: musicsDeleted
+      top_musics_deleted: musicsDeleted,
+      user_deleted: userDeleted
     };
   }
 }

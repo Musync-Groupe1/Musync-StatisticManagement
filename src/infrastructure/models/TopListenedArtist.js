@@ -11,10 +11,11 @@ import mongoose from 'mongoose';
  * Ce schéma est utilisé pour mapper les documents dans MongoDB via Mongoose.
  */
 const TopListenedArtistSchema = new mongoose.Schema({
-  /** Identifiant unique de l’utilisateur auquel est lié cet artiste. */
+  /** Identifiant de l’utilisateur. */
   user_id: { 
     type: Number, 
-    required: true, 
+    ref: 'User',
+    required: true,
     index: true
   },
   /**

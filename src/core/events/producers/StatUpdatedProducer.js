@@ -21,7 +21,7 @@ import kafkaConfig from 'infrastructure/kafka/kafkaConfig.js';
 export async function publishStatUpdated(payload) {
   // Vérification minimale : l’envoi est conditionné à la présence d’un userId
   if (!payload?.userId) {
-    console.warn('[Kafka] Aucun userId fourni, message non publié.');
+    console.warn('[Kafka][Producer] Aucun userId fourni, message non publié.');
     return;
   }
 
@@ -41,8 +41,8 @@ export async function publishStatUpdated(payload) {
       messages: [message],
     });
 
-    console.log(`[Kafka] Statistiques envoyées avec succès pour l’utilisateur ${payload.userId}`);
+    console.log(`[Kafka][Producer] Statistiques envoyées avec succès pour l’utilisateur ${payload.userId}`);
   } catch (err) {
-    console.error(`[Kafka] Échec de l’envoi du message pour user ${payload.userId} :`, err);
+    console.error(`[Kafka][Producer] Échec de l’envoi du message pour user ${payload.userId} :`, err);
   }
 }

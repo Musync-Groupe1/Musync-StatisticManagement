@@ -13,6 +13,9 @@ import FetchUserMusicStats from 'core/usecases/FetchUserMusicStats.js';
 import MongoUserStatsRepository from 'infrastructure/database/mongo/MongoUserStatsRepository.js';
 import MongoTopArtistRepository from 'infrastructure/database/mongo/MongoTopArtistRepository.js';
 import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusicRepository.js';
+import MongoUserRepository from 'infrastructure/database/mongo/MongoUserRepository.js';
+
+import UserService from 'core/services/userService.js';
 
 import { generateSpotifyAuthUrl, decodeSpotifyState } from 'infrastructure/services/spotifyAuthService.js';
 
@@ -108,49 +111,69 @@ import { generateSpotifyAuthUrl, decodeSpotifyState } from 'infrastructure/servi
  * @returns {Promise<void>} - Réponse JSON avec confirmation et compteurs d’insertions
  */
 export default async function handler(req, res) {
-  // Vérifie la méthode HTTP
   if (!validateMethod(req, res, ['GET'])) return;
 
-  const { userId, platform, code, state } = req.query;
-
-  // Redirection vers l’interface d’autorisation de Spotify
-  if (!code && platform === 'spotify' && userId) {
-    const redirectUrl = generateSpotifyAuthUrl(userId, platform);
-    return res.redirect(redirectUrl);
-  }
-
-  // Vérifie les paramètres nécessaires au retour d’OAuth
-  if (!code || !state) {
-    return res.status(400).json({ error: '`code` et `state` sont requis.' });
-  }
-
-  // Décode l’état (`state`) pour retrouver les données utiles (userId, plateforme)
-  let parsedState;
-  try {
-    parsedState = decodeSpotifyState(state);
-  } catch (err) {
-    return res.status(400).json({ error: err.message });
-  }
-
-  const resolvedUserId = parsedState.userId;
-  const resolvedPlatform = parsedState.platform;
-
-  if (!resolvedUserId || !resolvedPlatform) {
-    return res.status(400).json({ error: '`userId` et `platform` manquants dans `state`.' });
-  }
+  const { userId, code, state } = req.query;
 
   try {
-    // Connexion à la base de données
     await connectToDatabase();
+    const userService = new UserService({ userRepo: new MongoUserRepository() });
 
-    // Obtiens la stratégie adaptée (Spotify, Deezer…) pour récupération des stats
+    // 1. Cas initial : redirection OAuth (pas de code, mais userId présent)
+    if (!code && userId) {
+      const user = await userService.findByUserId(Number(userId));
+
+      if (!user) {
+        res.status(404).json({ error: 'Utilisateur introuvable.' });
+        return;
+      }
+
+      if (!user.music_platform) {
+        res.status(400).json({ error: 'Aucune plateforme musicale définie pour cet utilisateur.' });
+        return;
+      }
+
+      switch (user.music_platform) {
+        case 'spotify': {
+          const redirectUrl = generateSpotifyAuthUrl(userId, user.music_platform);
+          res.redirect(redirectUrl);
+          return;
+        }
+        default:
+          res.status(400).json({ error: `Plateforme non supportée : ${user.music_platform}` });
+          return;
+      }
+    }
+
+    // 2. Cas retour OAuth (avec code + state)
+    if (!code || !state) {
+      res.status(400).json({ error: '`code` et `state` sont requis après redirection.' });
+      return;
+    }
+
+    let parsedState;
+    try {
+      parsedState = decodeSpotifyState(state);
+    } catch (err) {
+      res.status(400).json({ error: 'State invalide ou corrompu : ' + err.message });
+      return;
+    }
+
+    const resolvedUserId = Number(parsedState.userId);
+    const resolvedPlatform = parsedState.platform;
+
+    if (!resolvedUserId || !resolvedPlatform) {
+      res.status(400).json({ error: '`userId` et `platform` manquants dans le state OAuth.' });
+      return;
+    }
+
+    // Utilisation de la stratégie adaptée
     const strategy = await getPlatformStrategy(resolvedPlatform, code);
 
-    // Exécute le use case principal avec les bons repositories
     const usecase = new FetchUserMusicStats({
       strategy,
       userId: resolvedUserId,
-      userRepo: new MongoUserStatsRepository(),
+      userStatRepo: new MongoUserStatsRepository(),
       artistRepo: new MongoTopArtistRepository(),
       musicRepo: new MongoTopMusicRepository()
     });

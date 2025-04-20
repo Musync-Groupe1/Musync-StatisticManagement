@@ -147,7 +147,6 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       user_id: Number(userId),
-      music_platform: stats.music_platform || null,
       favorite_genre: stats.favorite_genre || null,
       top_listened_artists: stats.top_listened_artists || [],
       top_listened_musics: stats.top_listened_musics || []

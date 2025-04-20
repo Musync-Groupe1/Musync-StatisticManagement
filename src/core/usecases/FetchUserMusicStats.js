@@ -17,14 +17,14 @@ export default class FetchUserMusicStats {
    * @param {Object} deps - Dépendances injectées
    * @param {Object} deps.strategy - Stratégie de plateforme (SpotifyStrategy, etc.)
    * @param {string|number} deps.userId - ID unique de l’utilisateur
-   * @param {Object} deps.userRepo - Repository pour les statistiques globales utilisateur
+   * @param {Object} deps.userStatRepo - Repository pour les statistiques globales utilisateur
    * @param {Object} deps.artistRepo - Repository pour les artistes les plus écoutés
    * @param {Object} deps.musicRepo - Repository pour les musiques les plus écoutées
    */
-  constructor({ strategy, userId, userRepo, artistRepo, musicRepo }) {
+  constructor({ strategy, userId, userStatRepo, artistRepo, musicRepo }) {
     this.strategy = strategy;
     this.userId = userId;
-    this.userRepo = userRepo;
+    this.userStatRepo = userStatRepo;
     this.artistRepo = artistRepo;
     this.musicRepo = musicRepo;
   }
@@ -51,9 +51,8 @@ export default class FetchUserMusicStats {
     const savedMusics = await this.musicRepo.upsertMany(this.userId, topMusics);
 
     // Mise à jour des statistiques globales
-    await this.userRepo.updateOrCreate(this.userId, {
+    await this.userStatRepo.updateOrCreate(this.userId, {
       favorite_genre: favoriteGenre,
-      music_platform: 'spotify',
       top_listened_artists: savedArtists.map(a => a._id),
       top_listened_musics: savedMusics.map(m => m._id),
     });

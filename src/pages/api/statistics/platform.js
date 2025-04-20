@@ -5,8 +5,8 @@
 
 import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
 import connectToDatabase from 'infrastructure/database/mongooseClient.js';
-import MongoUserStatsRepository from 'infrastructure/database/mongo/MongoUserStatsRepository.js';
-import MusicStatsService from 'core/services/musicStatsService.js';
+import MongoUserRepository from 'infrastructure/database/mongo/MongoUserRepository.js';
+import UserService from 'core/services/userService.js';
 
 /**
  * @swagger
@@ -14,8 +14,7 @@ import MusicStatsService from 'core/services/musicStatsService.js';
  *   get:
  *     summary: Récupère la plateforme musicale utilisée par un utilisateur
  *     description: |
- *       Permet d’obtenir la plateforme de streaming (Spotify, Deezer, etc.)
- *       sur laquelle les statistiques musicales ont été collectées.
+ *       Permet d’obtenir la plateforme musicale (Spotify, Soundcloud, etc.)
  *     parameters:
  *       - in: query
  *         name: userId
@@ -34,7 +33,7 @@ import MusicStatsService from 'core/services/musicStatsService.js';
  *                 music_platform:
  *                   type: string
  *                   maxLength: 255
- *                   description: La plateforme musical que l'utilisateur utilise
+ *                   description: La plateforme musicale que l'utilisateur utilise
  *                   example: "spotify"
  *       400:
  *         description: Requête invalide - `userId` manquant
@@ -88,11 +87,11 @@ export default async function handler(req, res) {
     // Connexion à la base de données
     await connectToDatabase();
 
-    const service = new MusicStatsService({
-      userStatsRepo: new MongoUserStatsRepository()
+    const service = new UserService({
+      userRepo: new MongoUserRepository()
     });
 
-    const platform = await service.getMusicPlatform(userId);
+    const platform = await service.findPlatformByUserId(userId);
 
     if (!platform) return res.status(404).json({ error: 'Aucune plateforme trouvée.' });
 

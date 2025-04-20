@@ -10,9 +10,10 @@ import mongoose from 'mongoose';
  * Ce schéma permet d’enregistrer les 3 morceaux favoris d’un utilisateur dans la base MongoDB.
  */
 const TopListenedMusicSchema = new mongoose.Schema({
-  /** Identifiant unique de l’utilisateur. */
+  /** Identifiant de l’utilisateur. */
   user_id: { 
     type: Number, 
+    ref: 'User',
     required: true,
     index: true
   },
