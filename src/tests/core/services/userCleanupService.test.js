@@ -26,10 +26,16 @@ describe('UserCleanupService - deleteAllUserData', () => {
       deleteAllByUserId: jest.fn().mockResolvedValue(2)
     };
 
+    const mockUserRepo = {
+      exists: jest.fn().mockResolvedValue(true),
+      deleteByUserId: jest.fn().mockResolvedValue(1)
+    };
+
     const service = new UserCleanupService({
       userStatsRepo: mockUserStatsRepo,
       artistRepo: mockArtistRepo,
-      musicRepo: mockMusicRepo
+      musicRepo: mockMusicRepo,
+      userRepo: mockUserRepo
     });
 
     const userId = 42;
@@ -45,7 +51,8 @@ describe('UserCleanupService - deleteAllUserData', () => {
     expect(result).toEqual({
       user_stats_deleted: 1,
       top_artists_deleted: 3,
-      top_musics_deleted: 2
+      top_musics_deleted: 2,
+      user_deleted: 1
     });
   });
 
@@ -72,10 +79,16 @@ describe('UserCleanupService - deleteAllUserData', () => {
       deleteAllByUserId: jest.fn().mockResolvedValue(0)
     };
 
+    const mockUserRepo = {
+      exists: jest.fn().mockResolvedValue(true),
+      deleteByUserId: jest.fn().mockResolvedValue(0)
+    };
+
     const service = new UserCleanupService({
       userStatsRepo: mockUserStatsRepo,
       artistRepo: mockArtistRepo,
-      musicRepo: mockMusicRepo
+      musicRepo: mockMusicRepo,
+      userRepo: mockUserRepo
     });
 
     const userId = 99;
@@ -91,7 +104,8 @@ describe('UserCleanupService - deleteAllUserData', () => {
     expect(result).toEqual({
       user_stats_deleted: 0,
       top_artists_deleted: 0,
-      top_musics_deleted: 0
+      top_musics_deleted: 0,
+      user_deleted: 0
     });
   });
 
@@ -115,17 +129,23 @@ describe('UserCleanupService - deleteAllUserData', () => {
       deleteAllByUserId: jest.fn()
     };
 
+    const mockUserRepo = {
+      exists: jest.fn().mockResolvedValue(false),
+      deleteByUserId: jest.fn()
+    };
+
     const service = new UserCleanupService({
       userStatsRepo: mockUserStatsRepo,
       artistRepo: mockArtistRepo,
-      musicRepo: mockMusicRepo
+      musicRepo: mockMusicRepo,
+      userRepo: mockUserRepo
     });
 
     // WHEN
     const result = await service.deleteAllUserData(404);
 
     // THEN
-    expect(mockUserStatsRepo.findByUserId).toHaveBeenCalledWith(404);
+    expect(mockUserRepo.exists).toHaveBeenCalledWith(404);
     expect(result).toBeNull();
     expect(mockUserStatsRepo.deleteByUserId).not.toHaveBeenCalled();
     expect(mockArtistRepo.deleteAllByUserId).not.toHaveBeenCalled();

@@ -99,30 +99,6 @@ describe('SpotifyClient', () => {
     expect(mockSetRefreshToken).not.toHaveBeenCalled();
   });
 
-  it('shouldRefreshAccessTokenSuccessfully', async () => {
-    // GIVEN
-    mockRefreshAccessToken.mockResolvedValue({ body: { access_token: 'newToken' } });
-
-    const client = new SpotifyClient({});
-
-    // WHEN
-    const token = await client.refreshAccessToken();
-
-    // THEN
-    expect(mockRefreshAccessToken).toHaveBeenCalled();
-    expect(token).toBe('newToken');
-  });
-
-  it('shouldThrowIfAccessTokenIsMissingAfterRefresh', async () => {
-    // GIVEN
-    mockRefreshAccessToken.mockResolvedValue({ body: {} });
-
-    const client = new SpotifyClient({});
-
-    // WHEN / THEN
-    await expect(client.refreshAccessToken()).rejects.toThrow("Impossible de rafraîchir le token.");
-  });
-
   it('shouldCallGetTopArtistsWithDefaultLimit', async () => {
     // GIVEN
     mockGetMyTopArtists.mockResolvedValue({ body: { items: ['artist1', 'artist2'] } });

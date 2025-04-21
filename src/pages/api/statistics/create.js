@@ -1,38 +1,117 @@
 /**
- * @fileoverview Endpoint temporaire pour créer un utilisateur dans la collection `User`.
- * Permet de tester manuellement l’insertion dans la base sans validation stricte.
+ * @fileoverview Endpoint pour insérer ou mettre à jour un utilisateur dans la collection `User`.
+ * Ce point d'entrée est destiné à être appelé automatiquement par le Kafka consumer
+ * après réception d’un message sur le topic "user". Il ne valide que les plateformes musicales supportées.
  */
 
 import connectToDatabase from 'infrastructure/database/mongooseClient.js';
-import User from 'infrastructure/models/User.js';
+import MongoUserRepository from 'infrastructure/database/mongo/MongoUserRepository.js';
+import UserService from 'core/services/userService.js';
+import {isValidUserId, isValidMusicPlatform} from 'infrastructure/utils/inputValidator.js';
 
 /**
- * Handler API POST `/api/user/create`
+ * @swagger
+ * /api/statistics/create:
+ *   post:
+ *     summary: Crée ou met à jour un utilisateur en base MongoDB
+ *     description:
+ *       Endpoint utilisé par un consumer Kafka pour insérer ou mettre à jour
+ *       un utilisateur avec son ID et sa plateforme musicale.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - music_platform
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *                 description: Identifiant unique de l'utilisateur
+ *                 example: 123
+ *               music_platform:
+ *                 type: string
+ *                 description: >
+ *                   Plateforme musicale utilisée (ex: spotify)
+ *                 enum: [spotify]
+ *                 example: spotify
+ *     responses:
+ *       201:
+ *         description: Utilisateur créé ou mis à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Utilisateur créé ou mis à jour avec succès.
+ *                 user:
+ *                   type: object
+ *                   description: Document utilisateur inséré/mis à jour
+ *       400:
+ *         description: Paramètre invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Paramètre `userId` invalide.
+ *       405:
+ *         description: Méthode HTTP non autorisée
+ *       500:
+ *         description: Erreur interne du serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Erreur serveur.
+ */
+
+/**
+ * Handler API POST `/api/statistics/create`
  *
- * @param {Object} req - Requête HTTP
- * @param {Object} res - Réponse HTTP
+ * @param {Request} req - Objet de la requête HTTP
+ * @param {Response} res - Objet de la réponse HTTP
  */
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Méthode non autorisée' });
   }
 
-  const { userId, platform } = req.query;
+  const { userId, music_platform } = req.body;
+
+  // Vérification des paramètres
+  if (!isValidUserId(userId)) {
+    return res.status(400).json({ error: 'Paramètre "userId" invalide : un entier est requis.' });
+  }
+
+  if (!isValidMusicPlatform(music_platform)) {
+    return res.status(400).json({ error: 'Plateforme musicale non supportée.' });
+  }
 
   try {
     await connectToDatabase();
 
-    const createdUser = await User.create({
-      user_id: userId,
-      music_platform: platform,
+    const userService = new UserService({
+      userRepo: new MongoUserRepository()
     });
 
+    const user = await userService.updateOrCreate(userId, music_platform);
+
     res.status(201).json({
-      message: 'Utilisateur créé avec succès.',
-      user: createdUser,
+      message: 'Utilisateur créé ou mis à jour avec succès.',
+      user,
     });
   } catch (error) {
-    console.error('Erreur lors de la création de l’utilisateur :', error);
+    console.error('Erreur lors de la création/mise à jour de l’utilisateur :', error);
     res.status(500).json({ error: 'Erreur serveur.' });
   }
 }

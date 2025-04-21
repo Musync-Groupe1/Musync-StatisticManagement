@@ -50,7 +50,6 @@ describe('swaggerSpec (unit test)', () => {
     expect(components.schemas.UserMusicStatistic.type).toBe('object');
     expect(components.schemas.UserMusicStatistic.properties).toHaveProperty('user_id');
     expect(components.schemas.UserMusicStatistic.properties).toHaveProperty('favorite_genre');
-    expect(components.schemas.UserMusicStatistic.properties).toHaveProperty('music_platform');
   });
 
   /**

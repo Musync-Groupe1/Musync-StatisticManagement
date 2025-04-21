@@ -1,4 +1,3 @@
-// src/tests/core/factories/userCleanupServiceFactory.test.js
 import { jest } from '@jest/globals';
 
 // Mock des dépendances utilisées par la factory
@@ -22,6 +21,11 @@ jest.unstable_mockModule('infrastructure/database/mongo/MongoTopMusicRepository.
   default: jest.fn(),
 }));
 
+jest.unstable_mockModule('infrastructure/database/mongo/MongoUserRepository.js', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
+
 /**
  * @description
  * Ce test vérifie que la factory `createUserCleanupService()` instancie correctement
@@ -39,6 +43,7 @@ describe('createUserCleanupService (unit test)', () => {
     const MongoUserStatsRepository = (await import('infrastructure/database/mongo/MongoUserStatsRepository.js')).default;
     const MongoTopArtistRepository = (await import('infrastructure/database/mongo/MongoTopArtistRepository.js')).default;
     const MongoTopMusicRepository = (await import('infrastructure/database/mongo/MongoTopMusicRepository.js')).default;
+    const MongoUserRepository = (await import('infrastructure/database/mongo/MongoUserRepository.js')).default;
 
     const { createUserCleanupService } = await import('core/factories/userCleanupServiceFactory.js');
 
@@ -49,10 +54,12 @@ describe('createUserCleanupService (unit test)', () => {
     expect(MongoUserStatsRepository).toHaveBeenCalled();
     expect(MongoTopArtistRepository).toHaveBeenCalled();
     expect(MongoTopMusicRepository).toHaveBeenCalled();
+    expect(MongoUserRepository).toHaveBeenCalled();
     expect(UserCleanupService).toHaveBeenCalledWith({
       userStatsRepo: expect.any(Object),
       artistRepo: expect.any(Object),
       musicRepo: expect.any(Object),
+      userRepo: expect.any(Object),
     });
   });
 });

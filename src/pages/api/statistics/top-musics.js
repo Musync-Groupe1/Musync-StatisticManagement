@@ -1,12 +1,13 @@
 /**
  * @fileoverview Endpoint API pour récupérer les 3 musiques les plus écoutées par un utilisateur.
- * Utilise le repository Mongo pour extraire les musiques les mieux classées d’un utilisateur.
+ * S'appuie sur le service `MusicStatsService` et un repository MongoDB pour les statistiques musicales.
  */
 
 import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
 import connectToDatabase from 'infrastructure/database/mongooseClient.js';
 import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusicRepository.js';
 import MusicStatsService from 'core/services/musicStatsService.js';
+import { isValidUserId } from 'infrastructure/utils/inputValidator.js';
 
 /**
  * @swagger
@@ -89,9 +90,18 @@ import MusicStatsService from 'core/services/musicStatsService.js';
 /**
  * Handler API GET `/api/statistics/top-musics`
  *
- * @param {Object} req - Requête HTTP entrante
- * @param {Object} res - Réponse HTTP sortante
- * @returns {Promise<void>} - Liste des musiques top 3 écoutées par l'utilisateur
+ * @param {Request} req - Objet de la requête HTTP
+ * @param {Response} res - Objet de la réponse HTTP
+ * @returns {Promise<void>} - Réponse contenant la liste des 3 musiques les plus écoutées
+ * 
+ * @example
+ * {
+ *   "top_listened_musics": [
+ *     { "user_id": 42, "music_name": "Blinding Lights", "artist_name": "The Weeknd", "ranking": 1 },
+ *     { "user_id": 42, "music_name": "Levitating", "artist_name": "Dua Lipa", "ranking": 2 },
+ *     { "user_id": 42, "music_name": "Save Your Tears", "artist_name": "The Weeknd", "ranking": 3 }
+ *   ]
+ * }
  */
 export default async function handler(req, res) {
   // Vérifie la méthode HTTP
@@ -100,7 +110,9 @@ export default async function handler(req, res) {
   const { userId } = req.query;
 
   // Vérifie le paramètre requis
-  if (!userId) return res.status(400).json({ error: 'userId manquant' });
+  if (!userId || !isValidUserId(userId)) {
+    return res.status(400).json({ error: 'Paramètre `userId` manquant ou invalide.' });
+  }
 
   try {
     // Connexion à la base de données

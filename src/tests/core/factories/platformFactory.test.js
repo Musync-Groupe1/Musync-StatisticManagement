@@ -31,17 +31,6 @@ describe('getPlatformStrategy', () => {
   });
 
   /**
-   * GIVEN : Une plateforme "deezer" (non encore supportée)
-   * WHEN  : On appelle la factory
-   * THEN  : Une erreur doit être levée
-   */
-  it('shouldThrowError_whenPlatformIsDeezer', async () => {
-    await expect(getPlatformStrategy('deezer', 'code'))
-      .rejects
-      .toThrow('Deezer non encore disponible.');
-  });
-
-  /**
    * GIVEN : Une plateforme inconnue
    * WHEN  : On appelle la factory
    * THEN  : Une erreur doit être levée mentionnant l’invalidité

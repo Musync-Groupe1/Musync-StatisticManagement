@@ -44,46 +44,6 @@ describe('MusicStatsService', () => {
     });
   });
 
-  describe('getMusicPlatform', () => {
-    /**
-     * GIVEN : Un utilisateur existant avec une plateforme définie ("spotify")
-     * WHEN  : Le service récupère sa plateforme via getMusicPlatform
-     * THEN  : Il doit retourner "spotify"
-     */
-    it('shouldReturnPlatformWhenExists', async () => {
-      // GIVEN
-      const mockUserStatsRepo = {
-        findByUserId: jest.fn().mockResolvedValue({ music_platform: 'spotify' })
-      };
-      const service = new MusicStatsService({ userStatsRepo: mockUserStatsRepo });
-
-      // WHEN
-      const platform = await service.getMusicPlatform(789);
-
-      // THEN
-      expect(platform).toBe('spotify');
-    });
-
-    /**
-     * GIVEN : Un utilisateur inexistant
-     * WHEN  : Le service tente de récupérer sa plateforme
-     * THEN  : Il doit retourner null
-     */
-    it('shouldReturnNullWhenUserNotFound', async () => {
-      // GIVEN
-      const mockUserStatsRepo = {
-        findByUserId: jest.fn().mockResolvedValue(null)
-      };
-      const service = new MusicStatsService({ userStatsRepo: mockUserStatsRepo });
-
-      // WHEN
-      const platform = await service.getMusicPlatform(321);
-
-      // THEN
-      expect(platform).toBeNull();
-    });
-  });
-
   describe('getCompleteStats', () => {
     /**
      * GIVEN : Un utilisateur avec des statistiques, artistes et musiques en base

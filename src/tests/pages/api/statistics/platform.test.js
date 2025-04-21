@@ -8,7 +8,7 @@ jest.unstable_mockModule('infrastructure/database/mongooseClient.js', () => ({
   default: jest.fn(),
 }));
 
-jest.unstable_mockModule('core/services/musicStatsService.js', () => ({
+jest.unstable_mockModule('core/services/userService.js', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
@@ -33,7 +33,7 @@ describe('/api/statistics/platform endpoint', () => {
     handler = platformEndpointModule.default;
 
     connectToDatabase = (await import('infrastructure/database/mongooseClient.js')).default;
-    MusicStatsService = (await import('core/services/musicStatsService.js')).default;
+    UserService = (await import('core/services/userService.js')).default;
   });
   beforeAll(() => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -74,7 +74,7 @@ describe('/api/statistics/platform endpoint', () => {
 
     // THEN
     expect(res._getStatusCode()).toBe(400);
-    expect(res._getData()).toMatch(/userId manquant/);
+    expect(JSON.parse(res._getData()).error).toMatch(/userId.*invalide/i);
   });
 
   /**
@@ -111,8 +111,8 @@ describe('/api/statistics/platform endpoint', () => {
   it('shouldReturn404WhenPlatformIsNotFound', async () => {
     // GIVEN
     connectToDatabase.mockResolvedValue(true);
-    MusicStatsService.mockImplementation(() => ({
-      getMusicPlatform: jest.fn().mockResolvedValue(null),
+    UserService.mockImplementation(() => ({
+      findPlatformByUserId: jest.fn().mockResolvedValue(null),
     }));
 
     const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42' } });
@@ -135,8 +135,8 @@ describe('/api/statistics/platform endpoint', () => {
   it('shouldReturn200AndPlatformWhenFound', async () => {
     // GIVEN
     connectToDatabase.mockResolvedValue(true);
-    MusicStatsService.mockImplementation(() => ({
-      getMusicPlatform: jest.fn().mockResolvedValue('spotify'),
+    UserService.mockImplementation(() => ({
+      findPlatformByUserId: jest.fn().mockResolvedValue('spotify'),
     }));
 
     const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42' } });

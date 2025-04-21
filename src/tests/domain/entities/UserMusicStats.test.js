@@ -26,7 +26,6 @@ describe('UserMusicStats Entity', () => {
     // THEN
     expect(stats.userId).toBe(1);
     expect(stats.favoriteGenre).toBe('rock');
-    expect(stats.musicPlatform).toBe('spotify');
     expect(stats.topArtists).toHaveLength(1);
     expect(stats.topMusics).toHaveLength(1);
   });
@@ -45,48 +44,35 @@ describe('UserMusicStats Entity', () => {
     const s1 = new UserMusicStats({
       userId: 1,
       favoriteGenre: null,
-      musicPlatform: 'spotify',
       topArtists: [],
       topMusics: []
     });
     expect(s1.isComplete()).toBe(false);
 
-    // CASE 2 : musicPlatform manquant
+    // CASE 2 : topArtists n’est pas un tableau
     const s2 = new UserMusicStats({
       userId: 1,
       favoriteGenre: 'rock',
-      musicPlatform: null,
-      topArtists: [],
+      topArtists: null,
       topMusics: []
     });
     expect(s2.isComplete()).toBe(false);
 
-    // CASE 3 : topArtists n’est pas un tableau
+    // CASE 3 : topMusics n’est pas un tableau
     const s3 = new UserMusicStats({
       userId: 1,
       favoriteGenre: 'rock',
-      musicPlatform: 'spotify',
-      topArtists: null,
-      topMusics: []
-    });
-    expect(s3.isComplete()).toBe(false);
-
-    // CASE 4 : topMusics n’est pas un tableau
-    const s4 = new UserMusicStats({
-      userId: 1,
-      favoriteGenre: 'rock',
-      musicPlatform: 'spotify',
       topArtists: [],
       topMusics: null
     });
-    expect(s4.isComplete()).toBe(false);
+    expect(s3.isComplete()).toBe(false);
   });
 
   /**
    * @description
    * Ce test vérifie que `isComplete()` retourne true lorsque tous les champs nécessaires sont présents.
    *
-   * GIVEN : Une instance avec genre, plateforme, artistes (tableau), musiques (tableau)
+   * GIVEN : Une instance avec genre, artistes (tableau), musiques (tableau)
    * WHEN  : La méthode isComplete() est appelée
    * THEN  : Elle doit retourner true
    */
@@ -94,7 +80,6 @@ describe('UserMusicStats Entity', () => {
     const stats = new UserMusicStats({
       userId: 1,
       favoriteGenre: 'jazz',
-      musicPlatform: 'deezer',
       topArtists: [],
       topMusics: []
     });
@@ -115,8 +100,6 @@ describe('UserMusicStats Entity', () => {
     const stats = UserMusicStats.empty(42);
 
     expect(stats.userId).toBe(42);
-    expect(stats.favoriteGenre).toBeNull();
-    expect(stats.musicPlatform).toBeNull();
     expect(stats.topArtists).toEqual([]);
     expect(stats.topMusics).toEqual([]);
     expect(stats.isComplete()).toBe(false);

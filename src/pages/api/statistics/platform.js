@@ -1,12 +1,13 @@
 /**
  * @fileoverview Endpoint API pour récupérer la plateforme musicale utilisée par un utilisateur.
- * S'appuie sur le service `MusicStatsService` et le repository MongoDB.
+ * Utilise `UserService` pour accéder à la collection `User` et retourne le champ `music_platform`.
  */
 
 import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
 import connectToDatabase from 'infrastructure/database/mongooseClient.js';
 import MongoUserRepository from 'infrastructure/database/mongo/MongoUserRepository.js';
 import UserService from 'core/services/userService.js';
+import { isValidUserId } from 'infrastructure/utils/inputValidator.js';
 
 /**
  * @swagger
@@ -44,7 +45,7 @@ import UserService from 'core/services/userService.js';
  *               properties:
  *                 error:
  *                   type: string
- *                   example: "userId manquant"
+ *                   example: "Paramètre `userId` manquant ou invalide."
  *       404:
  *         description: Aucune plateforme trouvée pour cet utilisateur
  *         content:
@@ -70,9 +71,14 @@ import UserService from 'core/services/userService.js';
 /**
  * Handler API GET `/api/statistics/platform`
  *
- * @param {Object} req - Requête HTTP
- * @param {Object} res - Réponse HTTP
- * @returns {Promise<void>} - Objet JSON contenant `music_platform`
+ * @param {Request} req - Objet de la requête HTTP
+ * @param {Response} res - Objet de la réponse HTTP
+ * @returns {Promise<void>} - Réponse JSON contenant la plateforme musicale, ou un message d’erreur.
+ *
+ * @example
+ * {
+ *   "music_platform": "spotify"
+ * }
  */
 export default async function handler(req, res) {
   // Vérifie la méthode HTTP
@@ -80,8 +86,10 @@ export default async function handler(req, res) {
 
   const { userId } = req.query;
 
-  // Vérifie le paramètre requis
-  if (!userId) return res.status(400).json({ error: 'userId manquant' });
+  // Vérification des paramètres requis et valides
+  if (!userId || !isValidUserId(userId)) {
+    return res.status(400).json({ error: 'Paramètre `userId` manquant ou invalide.' });
+  }
 
   try {
     // Connexion à la base de données

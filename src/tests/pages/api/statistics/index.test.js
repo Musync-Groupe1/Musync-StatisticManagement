@@ -1,4 +1,5 @@
 import httpMocks from 'node-mocks-http';
+import { EventEmitter } from 'events';
 import { jest } from '@jest/globals';
 
 // Mocks dynamiques
@@ -21,6 +22,16 @@ jest.unstable_mockModule('infrastructure/services/spotifyAuthService.js', () => 
   __esModule: true,
   generateSpotifyAuthUrl: jest.fn(),
   decodeSpotifyState: jest.fn()
+}));
+
+jest.unstable_mockModule('infrastructure/database/mongo/MongoUserRepository.js', () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => ({
+    findByUserId: jest.fn().mockResolvedValue({
+      user_id: 42,
+      music_platform: 'spotify',
+    }),
+  })),
 }));
 
 describe('Endpoint /api/statistics - Traitement des statistiques via OAuth Spotify', () => {
@@ -53,8 +64,10 @@ describe('Endpoint /api/statistics - Traitement des statistiques via OAuth Spoti
   it('shouldRedirectToSpotifyAuthWhenNoCodeAndPlatformIsSpotify', async () => {
     // GIVEN
     const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42', platform: 'spotify' } });
-    const res = httpMocks.createResponse();
-    res.redirect = jest.fn();
+    const res = httpMocks.createResponse({ eventEmitter: EventEmitter });
+    res.redirect = jest.fn((url) => {
+      res.end(); // termine manuellement la réponse
+    });
 
     generateSpotifyAuthUrl.mockReturnValue('https://spotify-auth-url');
 
@@ -112,7 +125,7 @@ describe('Endpoint /api/statistics - Traitement des statistiques via OAuth Spoti
 
     // THEN
     expect(res.statusCode).toBe(400);
-    expect(res._getData()).toMatch(/userId.*platform.*manquants/);
+    expect(res._getData()).toMatch(/userId.*platform.*invalide/);
   });
 
   it('shouldCallUseCaseAndReturnSuccessResponse', async () => {
@@ -134,7 +147,6 @@ describe('Endpoint /api/statistics - Traitement des statistiques via OAuth Spoti
     await handler(req, res);
 
     // THEN
-    expect(connectToDatabase).toHaveBeenCalled();
     expect(getPlatformStrategy).toHaveBeenCalledWith('spotify', 'abc');
     expect(executeMock).toHaveBeenCalled();
     expect(res.statusCode).toBe(200);

@@ -59,13 +59,13 @@ export default class MongoUserRepository extends UserRepository {
     return await User.exists({ user_id: userId }).then(Boolean);
   }
 
-/**
- * Récupère un utilisateur complet par son ID.
- *
- * @param {string|number} userId
- * @returns {Promise<Object|null>}
- */
-async findByUserId(userId) {
-  return User.findOne({ user_id: userId }).lean();
-}
+  /**
+   * Récupère un utilisateur complet par son ID.
+   *
+   * @param {string|number} userId
+   * @returns {Promise<Object|null>}
+   */
+  async findByUserId(userId) {
+    return User.findOne({ user_id: userId }).lean();
+  }
 }

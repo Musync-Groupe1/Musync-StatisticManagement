@@ -106,7 +106,6 @@ describe('/api/statistics/userStats endpoint', () => {
     connectToDatabase.mockResolvedValue(true);
     MusicStatsService.mockImplementation(() => ({
       getCompleteStats: () => ({
-        music_platform: 'spotify',
         favorite_genre: 'rock',
         top_listened_artists: [{ artist_name: 'Radiohead', ranking: 1 }],
         top_listened_musics: [{ music_name: 'Creep', artist_name: 'Radiohead', ranking: 2 }]
@@ -123,7 +122,6 @@ describe('/api/statistics/userStats endpoint', () => {
     expect(res._getStatusCode()).toBe(200);
     const json = res._getJSONData();
     expect(json.user_id).toBe(123);
-    expect(json.music_platform).toBe('spotify');
     expect(json.favorite_genre).toBe('rock');
     expect(json.top_listened_artists).toHaveLength(1);
     expect(json.top_listened_musics).toHaveLength(1);
@@ -148,7 +146,6 @@ describe('/api/statistics/userStats endpoint', () => {
     expect(res._getStatusCode()).toBe(200);
     const json = res._getJSONData();
     expect(json.user_id).toBe(99);
-    expect(json.music_platform).toBeNull();
     expect(json.favorite_genre).toBeNull();
     expect(json.top_listened_artists).toEqual([]);
     expect(json.top_listened_musics).toHaveLength(1);
@@ -159,7 +156,6 @@ describe('/api/statistics/userStats endpoint', () => {
     connectToDatabase.mockResolvedValue(true);
     MusicStatsService.mockImplementation(() => ({
       getCompleteStats: () => ({
-        music_platform: 'deezer',
         favorite_genre: 'electro',
         top_listened_artists: [{ artist_name: 'Daft Punk', ranking: 1 }]
       })
@@ -175,7 +171,6 @@ describe('/api/statistics/userStats endpoint', () => {
     expect(res._getStatusCode()).toBe(200);
     const json = res._getJSONData();
     expect(json.user_id).toBe(101);
-    expect(json.music_platform).toBe('deezer');
     expect(json.favorite_genre).toBe('electro');
     expect(json.top_listened_artists).toHaveLength(1);
     expect(json.top_listened_musics).toEqual([]);

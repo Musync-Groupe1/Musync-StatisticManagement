@@ -51,7 +51,7 @@ describe('/api/statistics/favorite-genre - GET handler', () => {
 
     // THEN
     expect(res._getStatusCode()).toBe(400);
-    expect(res._getData()).toMatch(/userId manquant/);
+    expect(res._getData()).toMatch(/userId.*invalide/);
   });
 
   it('shouldReturn500WhenDatabaseConnectionFails', async () => {

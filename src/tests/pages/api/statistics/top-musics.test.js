@@ -63,7 +63,9 @@ describe('/api/statistics/top-musics endpoint', () => {
 
     // THEN
     expect(res._getStatusCode()).toBe(400);
-    expect(res._getData()).toMatch(/userId manquant/);
+    expect(JSON.parse(res._getData())).toEqual({
+      error: 'Paramètre `userId` manquant ou invalide.'
+    });
   });
 
   it('shouldReturn500WhenDatabaseConnectionFails', async () => {

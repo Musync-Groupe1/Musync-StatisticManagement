@@ -5,7 +5,7 @@
 
 import mongoose from 'mongoose';
 
-const ALLOWED_PLATFORMS = ['spotify', 'soundcloud'];
+const ALLOWED_PLATFORMS = ['spotify'];
 
 /**
  * Schéma utilisateur : identifiant + plateforme musicale utilisée
@@ -17,7 +17,7 @@ const UserSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  /** Plateforme musicale utilisée par l'utilisateur (Spotify, Soundcloud...). */
+  /** Plateforme musicale utilisée par l'utilisateur. */
   music_platform: {
     type: String,
     enum: ALLOWED_PLATFORMS,

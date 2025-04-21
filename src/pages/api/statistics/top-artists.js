@@ -1,12 +1,13 @@
 /**
  * @fileoverview Endpoint API pour récupérer les 3 artistes les plus écoutés par un utilisateur.
- * Utilise un repository MongoDB pour accéder aux données, dans une architecture orientée domaine.
+ * Utilise `MusicStatsService` avec le repository Mongo pour renvoyer les artistes classés.
  */
 
 import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
 import connectToDatabase from 'infrastructure/database/mongooseClient.js';
 import MongoTopArtistRepository from 'infrastructure/database/mongo/MongoTopArtistRepository.js';
 import MusicStatsService from 'core/services/musicStatsService.js';
+import { isValidUserId } from 'infrastructure/utils/inputValidator.js';
 
 /**
  * @swagger
@@ -83,9 +84,17 @@ import MusicStatsService from 'core/services/musicStatsService.js';
 /**
  * Handler API GET `/api/statistics/top-artists`
  *
- * @param {Object} req - Objet de la requête HTTP
- * @param {Object} res - Objet de la réponse HTTP
+ * @param {Request} req - Objet de la requête HTTP
+ * @param {Response} res - Objet de la réponse HTTP
  * @returns {Promise<void>} - Réponse contenant les artistes les plus écoutés
+ * @example
+ * {
+ *   "top_listened_artists": [
+ *     { "user_id": 123, "artist_name": "Billie Eilish", "ranking": 1 },
+ *     { "user_id": 123, "artist_name": "Drake", "ranking": 2 },
+ *     { "user_id": 123, "artist_name": "SZA", "ranking": 3 }
+ *   ]
+ * }
  */
 export default async function handler(req, res) {
   // Vérifie la méthode HTTP
@@ -94,7 +103,9 @@ export default async function handler(req, res) {
   const { userId } = req.query;
 
   // Vérifie le paramètre requis
-  if (!userId) return res.status(400).json({ error: 'userId manquant' });
+  if (!userId || !isValidUserId(userId)) {
+    return res.status(400).json({ error: 'Paramètre `userId` manquant ou invalide.' });
+  }
 
   try {
     // Connexion à la base de données

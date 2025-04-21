@@ -10,6 +10,9 @@ import next from "next";
 import { initKafka } from './src/infrastructure/kafka/kafkaClient.js';
 import { initKafkaTopics } from './src/infrastructure/kafka/initKafkaTopics.js';
 
+// Kafka : Consumer
+import { startUserConsumer } from './src/infrastructure/kafka/userConsumer.js';
+
 // Swagger : Documentation interactive API
 import { setupSwaggerDocs } from './src/bootstrap/setupSwagger.js';
 
@@ -42,6 +45,9 @@ async function startServer() {
     // Connexion et initialisation du producteur Kafka
     await initKafka();
     await initKafkaTopics();
+
+    // Lancement du Kafka consumer
+    await startUserConsumer();
 
     // Gestion de toutes les routes via Next.js
     server.all("*", (req, res) => handle(req, res));

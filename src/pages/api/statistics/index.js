@@ -1,7 +1,7 @@
 /**
  * @fileoverview Endpoint API pour récupérer et stocker les statistiques musicales d’un utilisateur.
- * Utilise le pattern Strategy + UseCase pour s’adapter à plusieurs plateformes de streaming (Spotify, Deezer...).
- * La logique OAuth (redirection, code, state) est gérée pour Spotify.
+ * Utilise le pattern Strategy + UseCase pour s’adapter à plusieurs plateformes musicales (Spotify...).
+ * Gère aussi la logique OAuth 2.0 (étape de redirection puis récupération du code).
  */
 
 import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
@@ -18,6 +18,7 @@ import MongoUserRepository from 'infrastructure/database/mongo/MongoUserReposito
 import UserService from 'core/services/userService.js';
 
 import { generateSpotifyAuthUrl, decodeSpotifyState } from 'infrastructure/services/spotifyAuthService.js';
+import { isValidUserId, isValidMusicPlatform } from 'infrastructure/utils/inputValidator.js';
 
 /**
  * @swagger
@@ -25,37 +26,38 @@ import { generateSpotifyAuthUrl, decodeSpotifyState } from 'infrastructure/servi
  *   get:
  *     summary: Récupère et stocke les statistiques musicales d’un utilisateur
  *     description: |
- *       Utilise un code d’autorisation OAuth pour interroger une API de plateforme musicale
- *       (ex : Spotify) et stocker les artistes, musiques et genres favoris dans la base MongoDB.
+ *       Ce endpoint gère le processus OAuth 2.0 :
+ *       - Il redirige l’utilisateur vers une plateforme musicale (Spotify) s’il n’a pas encore autorisé l’accès.
+ *       - Il traite le retour avec un code OAuth pour extraire et sauvegarder les données musicales.
  *     parameters:
  *       - in: query
  *         name: userId
- *         required: true
- *         description: Identifiant unique de l’utilisateur
+ *         required: false
+ *         description: ID de l’utilisateur pour lancer la redirection OAuth
  *         schema:
  *           type: string
  *       - in: query
  *         name: platform
- *         required: true
- *         description: La plateforme musical que l'utilisateur utilise
+ *         required: false
+ *         description: Plateforme musicale ciblée (spotify, deezer...)
  *         schema:
  *           type: string
  *           enum: [spotify, deezer]
  *       - in: query
  *         name: code
- *         required: true
- *         description: Code d’autorisation OAuth de la plateforme
+ *         required: false
+ *         description: Code d’autorisation OAuth (retourné par Spotify)
  *         schema:
  *           type: string
  *       - in: query
  *         name: state
  *         required: false
- *         description: Paramètre encodé pour sécuriser l’échange OAuth
+ *         description: Paramètre de sécurité encodé par l’application
  *         schema:
  *           type: string
  *     responses:
  *       200:
- *         description: Succès - Statistiques récupérées et enregistrées
+ *         description: Statistiques musicales sauvegardées avec succès
  *         content:
  *           application/json:
  *             schema:
@@ -66,14 +68,12 @@ import { generateSpotifyAuthUrl, decodeSpotifyState } from 'infrastructure/servi
  *                   example: "Statistiques utilisateur mises à jour."
  *                 top_artists_saved:
  *                   type: integer
- *                   description: Nombre d'artistes qui a été récupéré et sauvegardé
  *                   example: 3
  *                 top_musics_saved:
  *                   type: integer
- *                   description: Nombre de musiques qui a été récupéré et sauvegardé
  *                   example: 3
  *       400:
- *         description: Requête invalide - paramètres manquants
+ *         description: Requête invalide
  *         content:
  *           application/json:
  *             schema:
@@ -83,7 +83,7 @@ import { generateSpotifyAuthUrl, decodeSpotifyState } from 'infrastructure/servi
  *                   type: string
  *                   example: "`userId`, `platform` et `code` sont requis."
  *       500:
- *         description: Erreur interne du serveur
+ *         description: Erreur serveur
  *         content:
  *           application/json:
  *             schema:
@@ -95,19 +95,10 @@ import { generateSpotifyAuthUrl, decodeSpotifyState } from 'infrastructure/servi
  */
 
 /**
- * Handler API GET `/api/statistics`
+ * Handler principal GET `/api/statistics`
  *
- * Ce endpoint gère deux cas :
- * 1. S’il n’y a pas de `code` (première visite), on redirige l’utilisateur vers Spotify pour autorisation.
- * 2. Sinon, on reçoit un `code` et un `state`, on échange le token, puis on récupère les statistiques musicales.
- *
- * Ce processus s’appuie sur :
- * - Le pattern OAuth 2.0 avec redirection
- * - Une factory de stratégies pour supporter plusieurs plateformes
- * - Un use case centralisé (FetchUserMusicStats) pour orchestrer les opérations
- *
- * @param {Object} req - Requête HTTP entrante
- * @param {Object} res - Réponse HTTP sortante
+ * @param {Request} req - Objet de la requête HTTP
+ * @param {Response} res - Objet de la réponse HTTP
  * @returns {Promise<void>} - Réponse JSON avec confirmation et compteurs d’insertions
  */
 export default async function handler(req, res) {
@@ -116,77 +107,101 @@ export default async function handler(req, res) {
   const { userId, code, state } = req.query;
 
   try {
-    await connectToDatabase();
-    const userService = new UserService({ userRepo: new MongoUserRepository() });
-
-    // 1. Cas initial : redirection OAuth (pas de code, mais userId présent)
+    // Étape 1 : Redirection OAuth si pas encore d'autorisation
     if (!code && userId) {
-      const user = await userService.findByUserId(Number(userId));
-
-      if (!user) {
-        res.status(404).json({ error: 'Utilisateur introuvable.' });
-        return;
-      }
-
-      if (!user.music_platform) {
-        res.status(400).json({ error: 'Aucune plateforme musicale définie pour cet utilisateur.' });
-        return;
-      }
-
-      switch (user.music_platform) {
-        case 'spotify': {
-          const redirectUrl = generateSpotifyAuthUrl(userId, user.music_platform);
-          res.redirect(redirectUrl);
-          return;
-        }
-        default:
-          res.status(400).json({ error: `Plateforme non supportée : ${user.music_platform}` });
-          return;
-      }
+      return await handleOAuthRedirect(res, userId);
     }
 
-    // 2. Cas retour OAuth (avec code + state)
+    // Étape 2 : Traitement retour OAuth avec code/state
     if (!code || !state) {
-      res.status(400).json({ error: '`code` et `state` sont requis après redirection.' });
-      return;
+      return res.status(400).json({ error: '`code` et `state` sont requis après redirection.' });
     }
 
-    let parsedState;
-    try {
-      parsedState = decodeSpotifyState(state);
-    } catch (err) {
-      res.status(400).json({ error: 'State invalide ou corrompu : ' + err.message });
-      return;
-    }
-
-    const resolvedUserId = Number(parsedState.userId);
-    const resolvedPlatform = parsedState.platform;
-
-    if (!resolvedUserId || !resolvedPlatform) {
-      res.status(400).json({ error: '`userId` et `platform` manquants dans le state OAuth.' });
-      return;
-    }
-
-    // Utilisation de la stratégie adaptée
-    const strategy = await getPlatformStrategy(resolvedPlatform, code);
-
-    const usecase = new FetchUserMusicStats({
-      strategy,
-      userId: resolvedUserId,
-      userStatRepo: new MongoUserStatsRepository(),
-      artistRepo: new MongoTopArtistRepository(),
-      musicRepo: new MongoTopMusicRepository()
-    });
-
-    const result = await usecase.execute();
-
-    res.status(200).json({
-      message: 'Statistiques utilisateur mises à jour.',
-      top_artists_saved: result.savedArtists.length,
-      top_musics_saved: result.savedMusics.length
-    });
+    return await handleOAuthCallback(res, code, state);
   } catch (error) {
-    console.error('Erreur dans /api/statistics :', error);
+    console.error('[Statistics Endpoint] Erreur générale :', error);
     responseError(res);
   }
+}
+
+/**
+ * Gère le premier appel sans `code` OAuth : redirige l'utilisateur vers la plateforme musicale (ex: Spotify).
+ *
+ * @async
+ * @function handleOAuthRedirect
+ * @param {Response} res  - Objet de réponse HTTP Next.js
+ * @param {string|number} userId - Identifiant utilisateur reçu dans la requête
+ * @returns {Promise<Response>}  - Redirection vers l'URL OAuth ou erreur
+ */
+async function handleOAuthRedirect(res, userId) {
+  if (!isValidUserId(userId)) {
+    return res.status(400).json({ error: 'Paramètre `userId` manquant ou invalide.' });
+  }
+
+  await connectToDatabase();
+  const userService = new UserService({ userRepo: new MongoUserRepository() });
+  const user = await userService.findByUserId(Number(userId));
+
+  if (!user) {
+    return res.status(404).json({ error: 'Utilisateur introuvable.' });
+  }
+
+  if (!user.music_platform || !isValidMusicPlatform(user.music_platform)) {
+    return res.status(400).json({ error: 'Plateforme musicale non supportée ou manquante.' });
+  }
+
+  switch (user.music_platform) {
+    case 'spotify': {
+      const redirectUrl = generateSpotifyAuthUrl(userId, user.music_platform);
+      return res.redirect(redirectUrl);
+    }
+    default:
+      return res.status(400).json({ error: `Plateforme non supportée : ${user.music_platform}` });
+  }
+}
+
+/**
+ * Gère le retour OAuth avec `code` et `state` : décode le state, sélectionne la stratégie,
+ * exécute le use case de récupération/sauvegarde des statistiques musicales.
+ *
+ * @async
+ * @function handleOAuthCallback
+ * @param {Response} res - Objet de réponse HTTP
+ * @param {string} code - Code OAuth reçu après redirection (ex: de Spotify)
+ * @param {string} state - Chaîne encodée contenant userId et platform
+ * @returns {Promise<Response>} - Résultat JSON avec confirmation de sauvegarde
+ */
+async function handleOAuthCallback(res, code, state) {
+  let parsedState;
+
+  try {
+    parsedState = decodeSpotifyState(state);
+  } catch (err) {
+    return res.status(400).json({ error: 'State invalide ou corrompu : ' + err.message });
+  }
+
+  const resolvedUserId = Number(parsedState.userId);
+  const resolvedPlatform = parsedState.platform;
+
+  if (!isValidUserId(resolvedUserId) || !isValidMusicPlatform(resolvedPlatform)) {
+    return res.status(400).json({ error: '`userId` ou `platform` invalide(s) dans le state OAuth.' });
+  }
+
+  const strategy = await getPlatformStrategy(resolvedPlatform, code);
+
+  const usecase = new FetchUserMusicStats({
+    strategy,
+    userId: resolvedUserId,
+    userStatRepo: new MongoUserStatsRepository(),
+    artistRepo: new MongoTopArtistRepository(),
+    musicRepo: new MongoTopMusicRepository()
+  });
+
+  const result = await usecase.execute();
+
+  return res.status(200).json({
+    message: 'Statistiques utilisateur mises à jour.',
+    top_artists_saved: result.savedArtists.length,
+    top_musics_saved: result.savedMusics.length
+  });
 }
