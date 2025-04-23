@@ -1,9 +1,9 @@
 name: Vérification des commits et branches
 
 on:
+  push:
   pull_request:
-    branches:
-      - "**"
+
 jobs:
   check-commits:
     runs-on: ubuntu-latest
@@ -25,8 +25,8 @@ jobs:
       - name: Vérification du nom de branche
         id: check_branch
         run: |
-          BRANCH_NAME=$(echo "${{ github.head_ref }}")
-          if echo "$BRANCH_NAME" | grep -qE "^(feature|fix|bugfix|hotfix|chore|docs|style|refactor|release|test|perf)/.+$"; then
+          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+          if echo "$BRANCH_NAME" | grep -qE "^(main|develop|(feature|fix|bugfix|hotfix|chore|docs|style|refactor|release|test|perf)/.+)$"; then
             echo "Nom de branche valide."
             echo "branch_ok=true" >> $GITHUB_ENV
           else
