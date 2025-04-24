@@ -18,11 +18,11 @@ const UserMusicStatisticSchema = new mongoose.Schema({
     required: true
   },
   // Plateforme de musique utilisée. 
-  // Obligatoire pour savoir d'où proviennent les données (Spotify, Apple Music, etc.).
-  music_platform: { 
-    type: String, 
-    required: true, 
-    enum: ['spotify', 'appleMusic'],
+  // Obligatoire pour savoir d'où proviennent les données (Spotify, Deezeer, etc.).
+  music_platform: {
+    type: String,
+    enum: ['spotify', 'deezer'],
+    required: true
   },
   // Liste des artistes les plus écoutés.
   // Chaque objet contient le nom de l'artiste et son classement.
@@ -34,6 +34,9 @@ const UserMusicStatisticSchema = new mongoose.Schema({
  * Le modèle de Mongoose pour les statistiques utilisateur.
  * Si le modèle a déjà été défini, il est utilisé ; sinon, un nouveau modèle est créé.
  */
-export const UserMusicStatistic = mongoose.models.UserMusicStatistic || mongoose.model(
-  'UserMusicStatistic', UserMusicStatisticSchema
+const UserMusicStatistic = mongoose.models.UserMusicStatistic || mongoose.model(
+  'UserMusicStatistic',
+  UserMusicStatisticSchema
 );
+
+export default UserMusicStatistic;

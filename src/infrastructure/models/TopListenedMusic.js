@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
  * Schéma Mongoose pour les musiques les plus écoutées.
  * Ce schéma définit la structure d'un document représentant une musique populaire avec son artiste et son classement.
  */
-const topListenedMusicSchema = new mongoose.Schema({
+const TopListenedMusicSchema = new mongoose.Schema({
   // Identifiant de l'utilisateur. Obligatoire pour relier les musiques à un utilisateur spécifique.
   user_id: { 
     type: Number, 
@@ -28,7 +28,6 @@ const topListenedMusicSchema = new mongoose.Schema({
   ranking: { 
     type: Number, 
     required: true,
-    unique: true,
     min: 1, // Le classement commence à 1
     max: 3  // Le classement se finit à 3
   }}, { versionKey: false });
@@ -37,6 +36,9 @@ const topListenedMusicSchema = new mongoose.Schema({
  * Le modèle de Mongoose pour les musiques les plus écoutées.
  * Si le modèle a déjà été défini, il est utilisé ; sinon, un nouveau modèle est créé.
  */
-export const TopListenedMusic = mongoose.models.TopListenedMusic || mongoose.model(
-  'TopListenedMusic', topListenedMusicSchema
+const TopListenedMusic = mongoose.models.TopListenedMusic || mongoose.model(
+  'TopListenedMusic',
+  TopListenedMusicSchema
 );
+
+export default TopListenedMusic;

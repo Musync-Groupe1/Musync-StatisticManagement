@@ -1,26 +1,31 @@
-import { getUserMusicPlatform } from '../../../services/musicStatsService';
-import { 
-  validateMethod,
-  ensureDatabaseConnection,
-  responseError
-} from '../../../services/apiHandlerService';
+/**
+ * @fileoverview Endpoint API pour récupérer la plateforme musicale utilisée par un utilisateur.
+ * S'appuie sur le service `MusicStatsService` et le repository MongoDB.
+ */
+
+import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
+import connectToDatabase from 'infrastructure/database/mongooseClient.js';
+import MongoUserStatsRepository from 'infrastructure/database/mongo/MongoUserStatsRepository.js';
+import MusicStatsService from 'core/services/musicStatsService.js';
 
 /**
  * @swagger
  * /api/statistics/platform:
  *   get:
- *     summary: Récupère la plateforme musicale utilisée d'un utilisateur
- *     description: Retourne la plateforme de streaming musical utilisée par l'utilisateur.
+ *     summary: Récupère la plateforme musicale utilisée par un utilisateur
+ *     description: |
+ *       Permet d’obtenir la plateforme de streaming (Spotify, Deezer, etc.)
+ *       sur laquelle les statistiques musicales ont été collectées.
  *     parameters:
- *       - name: userId
- *         in: query
+ *       - in: query
+ *         name: userId
  *         required: true
- *         description: Identifiant unique de l'utilisateur.
+ *         description: Identifiant unique de l’utilisateur
  *         schema:
  *           type: string
  *     responses:
  *       200:
- *         description: Succès - Retourne la plateforme musicale préférée de l'utilisateur.
+ *         description: Succès - Plateforme trouvée
  *         content:
  *           application/json:
  *             schema:
@@ -32,7 +37,7 @@ import {
  *                   description: La plateforme musical que l'utilisateur utilise
  *                   example: "spotify"
  *       400:
- *         description: Requête invalide - `userId` est requis.
+ *         description: Requête invalide - `userId` manquant
  *         content:
  *           application/json:
  *             schema:
@@ -40,9 +45,9 @@ import {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: "Requête invalide - `userId` est requis"
+ *                   example: "userId manquant"
  *       404:
- *         description: Aucune plateforme trouvée pour cet utilisateur.
+ *         description: Aucune plateforme trouvée pour cet utilisateur
  *         content:
  *           application/json:
  *             schema:
@@ -50,9 +55,9 @@ import {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: "Aucune plateforme trouvée pour cet utilisateur."
+ *                   example: "Aucune plateforme trouvée."
  *       500:
- *         description: Erreur interne du serveur.
+ *         description: Erreur interne du serveur
  *         content:
  *           application/json:
  *             schema:
@@ -64,39 +69,36 @@ import {
  */
 
 /**
- * Gestionnaire de requête pour récupérer la plateforme musicale préférée d'un utilisateur.
- * 
- * @param {import('next').NextApiRequest} req - Objet de la requête HTTP.
- * @param {import('next').NextApiResponse} res - Objet de la réponse HTTP.
- * @returns {Promise<void>} - Retourne une réponse JSON contenant la plateforme musicale préférée.
+ * Handler API GET `/api/statistics/platform`
+ *
+ * @param {Object} req - Requête HTTP
+ * @param {Object} res - Réponse HTTP
+ * @returns {Promise<void>} - Objet JSON contenant `music_platform`
  */
 export default async function handler(req, res) {
+  // Vérifie la méthode HTTP
+  if (!validateMethod(req, res)) return;
+
+  const { userId } = req.query;
+
+  // Vérifie le paramètre requis
+  if (!userId) return res.status(400).json({ error: 'userId manquant' });
+
   try {
-    // Vérifie si la méthode HTTP est autorisée
-    if (!validateMethod(req, res)) return;
+    // Connexion à la base de données
+    await connectToDatabase();
 
-    const { userId } = req.query;
+    const service = new MusicStatsService({
+      userStatsRepo: new MongoUserStatsRepository()
+    });
 
-    // Vérifie si l'identifiant de l'utilisateur est fourni
-    if (!userId) {
-      return res.status(400).json({ error: 'Requête invalide - `userId` manquant' });
-    }
+    const platform = await service.getMusicPlatform(userId);
 
-    // Vérifie la connexion à la base de données
-    if (!ensureDatabaseConnection()) return;
+    if (!platform) return res.status(404).json({ error: 'Aucune plateforme trouvée.' });
 
-    // Récupère la plateforme musicale de l'utilisateur
-    const platform = await getUserMusicPlatform(userId);
-
-    // Vérifie si une plateforme a été trouvée
-    if (!platform) {
-      return res.status(404).json({ error: "Aucune plateforme trouvée pour cet utilisateur." });
-    }
-
-    // Répond avec la plateforme trouvée
     res.status(200).json({ music_platform: platform });
-  } catch (error) {
-    console.error(error);
+  } catch (e) {
+    console.error(e);
     responseError(res);
   }
 }
