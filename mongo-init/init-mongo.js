@@ -1,27 +1,28 @@
 /**
  * @fileoverview Script d’initialisation MongoDB exécuté au lancement du conteneur.
- * Il crée un utilisateur administrateur avec le rôle `root` pour permettre l’accès sécurisé à la base.
+ * Il crée un utilisateur administrateur à partir des variables d'environnement Docker.
  */
 
 /**
- * Récupère une référence à la base `admin` (base spéciale pour la gestion des utilisateurs MongoDB).
- * `getSiblingDB` permet de cibler une autre base de données dans un script `mongo`.
+ * Récupère la base spéciale "admin" pour gérer les utilisateurs MongoDB.
  */
 db = db.getSiblingDB("admin");
 
 /**
- * Crée un utilisateur administrateur avec :
- * - nom d'utilisateur : "root"
- * - mot de passe : "rootpassword"
- * - rôle : "root" (accès complet à toutes les bases)
+ * Crée un utilisateur administrateur en utilisant les variables
+ * - `MONGO_INITDB_ROOT_USERNAME`
+ * - `MONGO_INITDB_ROOT_PASSWORD`
+ * injectées automatiquement par Docker lors du démarrage.
  */
+db = db.getSiblingDB("admin");
+
 db.createUser({
-  user: "root",
-  pwd: "rootpassword",
+  user: "${DB_ROOT_USERNAME}",
+  pwd: "${DB_ROOT_PASSWORD}",
   roles: [
     {
-      role: "root", // Donne un contrôle total sur le serveur MongoDB
-      db: "admin"   // Le rôle s'applique à la base "admin"
+      role: "root",
+      db: "admin"
     }
   ]
 });

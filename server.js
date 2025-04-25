@@ -6,12 +6,11 @@
 import express from "express";
 import next from "next";
 
-// Kafka : Producteur + Création automatique des topics
+// Kafka : Producteur/Consumer + Création topics + Déconnexion
 import { initKafka } from './src/infrastructure/kafka/kafkaClient.js';
 import { initKafkaTopics } from './src/infrastructure/kafka/initKafkaTopics.js';
-
-// Kafka : Consumer
 import { startUserConsumer } from './src/infrastructure/kafka/userConsumer.js';
+import { shutdownKafkaServer } from './src/bootstrap/shutdownKafka.js';
 
 // Swagger : Documentation interactive API
 import { setupSwaggerDocs } from './src/bootstrap/setupSwagger.js';
@@ -42,11 +41,9 @@ async function startServer() {
     // Intégration de Swagger à Express
     setupSwaggerDocs(server);
 
-    // Connexion et initialisation du producteur Kafka
+    // Connexion Kafka (producteur + topics + consumer)
     await initKafka();
     await initKafkaTopics();
-
-    // Lancement du Kafka consumer
     await startUserConsumer();
 
     // Gestion de toutes les routes via Next.js
@@ -62,6 +59,10 @@ async function startServer() {
     process.exit(1); // Quitte le processus en cas d’erreur critique
   }
 }
+
+// Gestion des signaux système pour arrêt contrôlé
+process.on('SIGINT', shutdownKafkaServer);
+process.on('SIGTERM', shutdownKafkaServer);
 
 // Lance le serveur
 startServer();

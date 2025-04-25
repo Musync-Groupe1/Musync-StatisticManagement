@@ -50,3 +50,22 @@ export const getKafkaProducer = async () => {
   }
   return _producer;
 };
+
+/**
+ * Déconnecte proprement le producteur Kafka si connecté.
+ *
+ * @async
+ * @function disconnectKafka
+ * @returns {Promise<void>}
+ */
+export const disconnectKafka = async () => {
+  if (_producer) {
+    try {
+      await _producer.disconnect();
+      _producer = null;
+      console.log('[Kafka] Producer déconnecté');
+    } catch (err) {
+      console.error('[Kafka] Erreur lors de la déconnexion du producer Kafka :', err);
+    }
+  }
+};

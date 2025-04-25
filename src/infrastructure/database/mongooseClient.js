@@ -20,12 +20,6 @@ import '../models/TopListenedMusic.js';
  * @async
  * @function connectToDatabase
  * @returns {Promise<boolean>} `true` si la connexion est réussie ou déjà active, `false` sinon
- *
- * @example
- * const connected = await connectToDatabase();
- * if (!connected) {
- *   return res.status(500).json({ error: "Base de données indisponible" });
- * }
  */
 const connectToDatabase = async () => {
   // 0 : disconnected —> on doit se connecter

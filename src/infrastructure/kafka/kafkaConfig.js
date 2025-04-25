@@ -4,6 +4,8 @@
  * pour produire et consommer des messages dans l'écosystème Kafka.
  */
 
+import { getEnvVar } from '../utils/envUtils.js';
+
 /**
  * Objet de configuration Kafka.
  *
@@ -22,9 +24,9 @@
  * @type {KafkaConfig}
  */
 const kafkaConfig = {
-    clientId: 'statistic-service',
-    brokers: ['kafka:9092'],
-    topic: 'statistic',
+    clientId: getEnvVar('KAFKA_CLIENT_ID'),
+    brokers: [getEnvVar('KAFKA_BROKER')],
+    topic: getEnvVar('KAFKA_TOPIC'),
 };
 
 export default kafkaConfig;

@@ -8,7 +8,7 @@ import { Kafka } from 'kafkajs';
 import kafkaConfig from './kafkaConfig.js';
 
 // Création d'une instance Kafka avec la configuration de l'application
-const kafka = new Kafka({
+const _kafka = new Kafka({
   clientId: kafkaConfig.clientId,
   brokers: kafkaConfig.brokers,
 });
@@ -29,7 +29,7 @@ const kafka = new Kafka({
  * await initKafkaTopics();
  */
 export async function initKafkaTopics() {
-  const admin = kafka.admin();
+  const admin = _kafka.admin();
   let retries = 5;
 
   while (retries > 0) {
@@ -58,6 +58,7 @@ export async function initKafkaTopics() {
       await new Promise((res) => setTimeout(res, 5000));
       if (retries === 0) {
         console.error('[Kafka] Erreur d\'initialisation des topics après plusieurs tentatives :', err);
+        throw new Error('Impossible d\'initialiser les topics Kafka');
       }
     }
   }

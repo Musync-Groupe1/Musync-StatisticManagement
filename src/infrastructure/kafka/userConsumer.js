@@ -1,19 +1,25 @@
+import { getEnvVar } from '../utils/envUtils.js';
 import axios from 'axios';
 import { Kafka } from 'kafkajs';
 import kafkaConfig from './kafkaConfig.js';
 import { isValidMusicPlatform } from '../utils/inputValidator.js';
 
-const kafka = new Kafka({
+const _kafka = new Kafka({
   clientId: kafkaConfig.clientId,
   brokers: kafkaConfig.brokers,
 });
 
-const consumer = kafka.consumer({ groupId: 'music-statistics-user-group' });
+const _consumer = _kafka.consumer({ groupId: 'music-statistics-user-group' });
+let _isConsumerRunning = false;
 
 /**
- * Extrait l'ID utilisateur et la première plateforme musicale valide.
- * @param {Object} data - Données du message Kafka
- * @returns {{ userId: number, platform: string }|null}
+ * Extrait les données utilisateur pertinentes depuis un message Kafka.
+ * - Récupère l'identifiant utilisateur et la première plateforme musicale valide.
+ *
+ * @param {Object} data - Données extraites du message Kafka.
+ * @param {Object} data.user - Objet contenant l'ID utilisateur.
+ * @param {Array<Object>} data.social_media - Liste des réseaux sociaux liés à l'utilisateur.
+ * @returns {{ userId: number, platform: string } | null} - Données utilisateur pertinentes, ou `null` si invalides.
  */
 function extractRelevantUserData(data) {
   const userId = data?.user?.user_id;
@@ -37,25 +43,45 @@ function extractRelevantUserData(data) {
 }
 
 /**
- * Envoie une requête POST à l’API /api/statistics/create
- * @param {number} userId
- * @param {string} platform
+ * Initialise et démarre le consommateur Kafka.
+ * - Se connecte à Kafka.
+ * - S'abonne au topic `user`.
+ * - Lance l'écoute et le traitement des messages.
+ *
+ * @async
+ * @function startUserConsumer
+ * @returns {Promise<void>}
  */
-async function sendUserToStatisticsApi(userId, platform) {
-  try {
-    const response = await axios.post('http://localhost:3000/api/statistics/create', {
-      userId,
-      music_platform: platform,
-    });
-    console.log(`[Kafka][consumer] Utilisateur ${userId} inséré avec succès. Status: ${response.status}`);
-  } catch (err) {
-    console.error(`[Kafka][consumer] Échec d’envoi pour user ${userId} (${platform}) :`, err.message);
+export async function startUserConsumer() {
+  if (_isConsumerRunning) {
+    console.warn('[Kafka][consumer] Consumer déjà démarré. Ignoré.');
+    return;
   }
+
+  await _consumer.connect();
+  await _consumer.subscribe({ topic: 'user', fromBeginning: false });
+
+  console.log('[Kafka][consumer] En écoute sur le topic "user"...');
+
+  await _consumer.run({
+    eachMessage: async ({ message }) => {
+      await handleUserMessage(message);
+    },
+  });
+
+  _isConsumerRunning = true;
 }
 
 /**
- * Traite chaque message Kafka reçu
- * @param {Object} message
+ * Traite un message Kafka reçu du topic `user`.
+ * - Parse le message.
+ * - Extrait les données utilisateur pertinentes.
+ * - Appelle l'API interne pour créer les statistiques.
+ *
+ * @async
+ * @param {Object} message - Message brut reçu depuis Kafka.
+ * @param {Buffer} message.value - Contenu du message encodé en Buffer.
+ * @returns {Promise<void>}
  */
 async function handleUserMessage(message) {
   try {
@@ -74,17 +100,42 @@ async function handleUserMessage(message) {
 }
 
 /**
- * Démarre le consumer Kafka
+ * Envoie une requête HTTP POST à l'API interne pour créer les statistiques utilisateur.
+ *
+ * @async
+ * @param {number} userId - Identifiant unique de l'utilisateur.
+ * @param {string} platform - Plateforme musicale validée (ex: 'spotify').
+ * @returns {Promise<void>}
  */
-export async function startUserConsumer() {
-  await consumer.connect();
-  await consumer.subscribe({ topic: 'user', fromBeginning: false });
+async function sendUserToStatisticsApi(userId, platform) {
+  try {
+    const baseUrl = getEnvVar('BASE_URL');
+    const response = await axios.post(`${baseUrl}/api/statistics/create`, {
+      userId,
+      music_platform: platform,
+    });
+    console.log(`[Kafka][consumer] Utilisateur ${userId} inséré avec succès.\nStatus: ${response.status}`);
+  } catch (err) {
+    console.error(`[Kafka][consumer] Échec d’envoi pour user ${userId} (${platform}) :`, err.message);
+  }
+}
 
-  console.log('[Kafka][consumer] En écoute sur le topic "user"...');
-
-  await consumer.run({
-    eachMessage: async ({ message }) => {
-      await handleUserMessage(message);
-    },
-  });
+/**
+ * Déconnecte proprement le consommateur Kafka.
+ * - Ferme la connexion au cluster Kafka.
+ *
+ * @async
+ * @function disconnectUserConsumer
+ * @returns {Promise<void>}
+ */
+export async function disconnectUserConsumer() {
+  try {
+    await _consumer.disconnect();
+    console.log('[Kafka] Consumer déconnecté');
+  } catch (err) {
+    console.error('[Kafka] Erreur lors de la déconnexion du consumer Kafka :', err);
+  } finally {
+    _consumer = null;
+    _isConsumerRunning = false;
+  }
 }
