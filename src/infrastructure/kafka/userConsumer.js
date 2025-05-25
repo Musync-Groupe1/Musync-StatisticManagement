@@ -9,6 +9,8 @@ const _kafka = new Kafka({
   brokers: kafkaConfig.brokers,
 });
 
+const keycloakUrl = getEnvVar('KEYCLOAK_AUTH_URL');
+
 const _consumer = _kafka.consumer({ groupId: 'music-statistics-user-group' });
 let _isConsumerRunning = false;
 
@@ -100,12 +102,15 @@ async function handleUserMessage(message) {
 }
 
 async function getServiceToken() {
-    const response = await axios.post('http://keycloak:8080/realms/Musync/protocol/openid-connect/token',
+    const response = await axios.post(
+      `${keycloakUrl}/realms/Musync/protocol/openid-connect/token`,
     new URLSearchParams({
-      grant_type: 'client_credentials',
+      grant_type: 'password',
       client_id: getEnvVar('KEYCLOAK_CLIENT_ID'),
-      client_secret: getEnvVar('KEYCLOAK_CLIENT_SECRET'),
-    }), {
+      username: getEnvVar('KEYCLOAK_USERNAME'),
+      password: getEnvVar('KEYCLOAK_PASSWORD')
+    }),
+    {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       }
@@ -126,16 +131,16 @@ async function getServiceToken() {
 async function sendUserToStatisticsApi(userId, platform) {
   try {
     const baseUrl = getEnvVar('BASE_URL');
-    //const token = await getServiceToken();
+    const token = await getServiceToken();
 
     const response = await axios.post(`${baseUrl}/api/statistics/create`, {
       userId,
       music_platform: platform,
-    }/*, {
+    }, {
       headers: {
         Authorization: `Bearer ${token}`,
       }
-    }*/);
+    });
 
     console.log(`[Kafka][consumer] Utilisateur ${userId} inséré avec succès.\nStatus: ${response.status}`);
   } catch (err) {

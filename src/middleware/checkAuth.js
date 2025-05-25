@@ -13,6 +13,9 @@
 
 import { expressjwt } from 'express-jwt';
 import jwksRsa from 'jwks-rsa';
+import { getEnvVar } from '../infrastructure/utils/envUtils.js';
+
+const KEYCLOAK_URL = getEnvVar('KEYCLOAK_AUTH_URL');
 
 /**
  * Middleware d'authentification basé sur JWT pour Express.
@@ -28,7 +31,7 @@ export const checkAuth = expressjwt({
          * URL exposant les clés publiques de Keycloak pour le Realm "Musync".
          * Utilisé pour valider les signatures RS256.
          */
-        jwksUri: 'http://localhost:8181/realms/Musync/protocol/openid-connect/certs',
+        jwksUri: `${KEYCLOAK_URL}/realms/Musync/protocol/openid-connect/certs`,
 
         /** Active le cache local des clés pour éviter les appels réseau répétés. */
         cache: true,
@@ -36,18 +39,6 @@ export const checkAuth = expressjwt({
         /** Active la limitation de requêtes vers JWKS. */
         rateLimit: true,
     }),
-
-    /**
-     * Identifiant du client (audience) tel que défini dans Keycloak.
-     * Le JWT doit contenir ce client ID dans le champ `aud`.
-     */
-    audience: 'Musync-client',
-
-    /**
-     * URL de l’émetteur (issuer) tel que défini dans la configuration du Realm Keycloak.
-     * Permet de vérifier que le token provient du bon realm.
-     */
-    issuer: 'http://localhost:8181/realms/Musync',
 
     credentialsRequired: true,
 

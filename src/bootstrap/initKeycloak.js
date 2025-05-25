@@ -26,9 +26,6 @@ export function initKeycloak(server) {
     "auth-server-url": process.env.KEYCLOAK_AUTH_URL,
     "ssl-required": "external",
     "resource": process.env.KEYCLOAK_CLIENT_ID,
-    "credentials": {
-      "secret": process.env.KEYCLOAK_CLIENT_SECRET
-    },
     "confidential-port": 0
   });
 

@@ -15,6 +15,9 @@ import { shutdownKafkaServer } from './src/bootstrap/shutdownKafka.js';
 // Swagger : Documentation interactive API
 import { setupSwaggerDocs } from './src/bootstrap/setupSwagger.js';
 
+// Middleware d'authentification JWT (Keycloak)
+import { checkAuth } from './src/middleware/checkAuth.js';
+
 // Détection de l’environnement
 const dev = process.env.NODE_ENV !== "production";
 const PORT = process.env.PORT || 3000;
@@ -51,7 +54,17 @@ async function startServer() {
     await initKafkaTopics();
     await startUserConsumer();
 
-    // Gestion de toutes les routes via Next.js
+    // Authentification obligatoire pour accéder à /api/statistics/*
+    server.use('/api/statistics', (req, res, next) => {
+      if (req.path === '/' || req.path === '') {
+        // Laisse passer sans authentification
+        return next();
+      }
+      // Applique l’authentification JWT
+      return checkAuth(req, res, next);
+    });
+
+    // Toutes les autres routes : Next.js
     server.all("*", (req, res) => handle(req, res));
 
     // Démarrage du serveur sur l'URL spécifiée
