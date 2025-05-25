@@ -17,7 +17,7 @@ export default class MongoUserStatsRepository extends UserStatsRepository {
    * Récupère les statistiques musicales complètes d’un utilisateur.
    * Inclut les artistes et musiques via `populate`.
    *
-   * @param {string|number} userId - Identifiant unique de l’utilisateur
+   * @param {string} userId - Identifiant unique de l’utilisateur
    * @returns {Promise<Object|null>} Objet contenant les statistiques ou null si absent
    */
   async findByUserId(userId) {
@@ -30,7 +30,7 @@ export default class MongoUserStatsRepository extends UserStatsRepository {
   /**
    * Met à jour les statistiques d’un utilisateur ou les crée si elles n’existent pas.
    *
-   * @param {string|number} userId - Identifiant unique de l’utilisateur
+   * @param {string} userId - Identifiant unique de l’utilisateur
    * @param {Object} data - Données à enregistrer (plateforme, genre, artistes, musiques)
    * @returns {Promise<Object>} Le document mis à jour ou inséré
    *
@@ -53,16 +53,8 @@ export default class MongoUserStatsRepository extends UserStatsRepository {
   /**
    * Supprime les statistiques d’un utilisateur à partir de son ID.
    *
-   * @param {string|number} userId - Identifiant unique de l’utilisateur
+   * @param {string} userId - Identifiant unique de l’utilisateur
    * @returns {Promise<number>} Nombre de documents supprimés (0 ou 1)
-   *
-   * @example
-   * const deletedCount = await repo.deleteByUserId(42);
-   * if (deletedCount > 0) {
-   *   console.log('Statistiques supprimées');
-   * } else {
-   *   console.log('Aucune donnée à supprimer');
-   * }
    */
   async deleteByUserId(userId) {
     const res = await UserStats.deleteOne({ user_id: userId });

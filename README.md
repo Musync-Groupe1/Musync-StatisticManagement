@@ -72,9 +72,9 @@ Un dossier `docs` sera généré, dans lequel vous aurez un fichier `index.html`
 
 ## 🔌 Endpoints
 
-### 📌 **1. Sauvegarder les statistiques d'un utilisateur **
+### 📌 **1. Sauvegarder les statistiques musicales d'un utilisateur**
 ```http
-GET /api/statistics?userId={user_id}&platform=spotify
+GET /api/statistics?userId={user_id}
 ```
 #### 🔹 **Réponse**
 ```json
@@ -86,7 +86,7 @@ GET /api/statistics?userId={user_id}&platform=spotify
 ```
 #### 🔹 **Codes HTTP**
 - `200 OK` : Succès  
-- `400 Bad Request` : paramètres manquants
+- `400 Bad Request` : `userId` manquant/invalide
 - `500 Internal Server Error` : Erreur serveur  
 
 ---
@@ -103,9 +103,9 @@ GET /api/statistics/favorite-genre?userId={user_id}
 ```
 #### 🔹 **Codes HTTP**
 - `200 OK` : Succès  
-- `400 Bad Request` : `userId` manquant  
-- `404 Not Found` : Aucun genre trouvé  
-- `500 Internal Server Error` : Erreur serveur  
+- `400 Bad Request` : `userId` manquant/invalide
+- `404 Not Found` : Aucun genre trouvé
+- `500 Internal Server Error` : Erreur serveur
 
 ---
 
@@ -118,7 +118,6 @@ GET /api/statistics/userStats?userId={user_id}
 {
   "user_id": 1,
   "favorite_genre": "Rock",
-  "music_platform": "spotify",
   "top_listened_artists": [
     {
       "music_name": "Titre musique 1",
@@ -137,7 +136,7 @@ GET /api/statistics/userStats?userId={user_id}
 ```
 #### 🔹 **Codes HTTP**
 - `200 OK` : Succès  
-- `400 Bad Request` : `userId` manquant  
+- `400 Bad Request` : `userId` manquant/invalide
 - `404 Not Found` : Aucune statistique trouvée  
 - `500 Internal Server Error` : Erreur serveur  
 
@@ -155,7 +154,7 @@ GET /api/statistics/ranking/artist?userId={user_id}&ranking={1|2|3}
 ```
 #### 🔹 **Codes HTTP**
 - `200 OK` : Succès  
-- `400 Bad Request` : `userId`, `ranking`, ou `ranking` manquant(s)  
+- `400 Bad Request` : Paramètres `userId`, `ranking` manquant(s)/invalide(s)
 - `404 Not Found` : Aucun artiste trouvé
 - `500 Internal Server Error` : Erreur serveur  
 
@@ -173,7 +172,7 @@ GET /api/statistics/ranking/music?userId={user_id}&ranking={1|2|3}
 ```
 #### 🔹 **Codes HTTP**
 - `200 OK` : Succès  
-- `400 Bad Request` : `userId`, `ranking`, ou `ranking` manquant(s)(s)  
+- `400 Bad Request` : Paramètres `userId`, `ranking` manquant(s)/invalide(s)
 - `404 Not Found` : Aucune musique trouvée
 - `500 Internal Server Error` : Erreur serveur  
 
@@ -205,7 +204,7 @@ GET /api/statistics/top-artists?userId={user_id}
 ```
 #### 🔹 **Codes HTTP**
 - `200 OK` : Succès  
-- `400 Bad Request` : `userId` manquant  
+- `400 Bad Request` : `userId` manquant/invalide 
 - `404 Not Found` : Aucun artiste trouvé
 - `500 Internal Server Error` : Erreur serveur  
 
@@ -240,7 +239,7 @@ GET /api/statistics/top-musics?userId={user_id}
 ```
 #### 🔹 **Codes HTTP**
 - `200 OK` : Succès  
-- `400 Bad Request` : `userId` manquant  
+- `400 Bad Request` : `userId` manquant/invalide
 - `404 Not Found` : Aucune musique trouvée
 - `500 Internal Server Error` : Erreur serveur  
 
@@ -248,7 +247,7 @@ GET /api/statistics/top-musics?userId={user_id}
 
 ### 📌 **8. Supprimer les données d'un utilisateur**
 ```http
-GET /api/statistics/deleteUserStats?userId={user_id}
+DELETE /api/statistics/deleteUserStats?userId={user_id}
 ```
 #### 🔹 **Réponse**
 ```json
@@ -259,7 +258,7 @@ GET /api/statistics/deleteUserStats?userId={user_id}
 ```
 #### 🔹 **Codes HTTP**
 - `200 OK` : Succès  
-- `400 Bad Request` : `userId` manquant  
+- `400 Bad Request` : `userId` manquant/invalide  
 - `500 Internal Server Error` : Erreur serveur  
 
 ---

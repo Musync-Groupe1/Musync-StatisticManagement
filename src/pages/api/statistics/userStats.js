@@ -1,6 +1,6 @@
 /**
- * @fileoverview Endpoint API pour récupérer toutes les statistiques d’un utilisateur :
- * user_id, plateforme musicale, genre préféré, top musiques, top artistes.
+ * @fileoverview Endpoint API pour récupérer toutes les statistiques musicales d’un utilisateur :
+ * genre favori, top musiques et artistes.
  */
 
 import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
@@ -10,6 +10,7 @@ import MusicStatsService from 'core/services/musicStatsService.js';
 import MongoUserStatsRepository from 'infrastructure/database/mongo/MongoUserStatsRepository.js';
 import MongoTopArtistRepository from 'infrastructure/database/mongo/MongoTopArtistRepository.js';
 import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusicRepository.js';
+import { isValidUserId, isUserStatsEmpty } from 'infrastructure/utils/inputValidator.js';
 
 /**
  * @swagger
@@ -17,11 +18,12 @@ import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusic
  *   get:
  *     summary: Récupère toutes les statistiques musicales d’un utilisateur
  *     description: |
- *       Retourne l’ensemble des données disponibles sur un utilisateur : plateforme utilisée,
+ *       Retourne l’ensemble des données disponibles sur un utilisateur :
  *       genre préféré, top artistes et top musiques écoutés.
  *     parameters:
  *       - in: query
  *         name: userId
+ *         format: uuid
  *         required: true
  *         description: Identifiant unique de l'utilisateur.
  *         schema:
@@ -35,14 +37,9 @@ import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusic
  *               type: object
  *               properties:
  *                 user_id:
- *                   type: integer
- *                   description: L'identifiant de l'utilisateur
- *                   example: 123
- *                 music_platform:
  *                   type: string
- *                   maxLength: 255
- *                   description: La plateforme musical que l'utilisateur utilise
- *                   example: "spotify"
+ *                   description: L'identifiant de l'utilisateur
+ *                   example: "fd961a0f-c94c-47ca-b0d9-8592e1fb79d1"
  *                 favorite_genre:
  *                   type: string
  *                   maxLength: 255
@@ -115,9 +112,17 @@ import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusic
 /**
  * Handler API GET `/api/statistics/userStats`
  *
- * @param {Object} req - Requête HTTP entrante
- * @param {Object} res - Réponse HTTP sortante
+ * @param {Request} req - Objet de la requête HTTP
+ * @param {Response} res - Objet de la réponse HTTP
  * @returns {Promise<void>} - Réponse JSON contenant toutes les statistiques de l’utilisateur
+ * 
+ * @example
+ * {
+ *   "user_id": "fd961a0f-c94c-47ca-b0d9-8592e1fb79d1",
+ *   "favorite_genre": "rap",
+ *   "top_listened_artists": [{ artist_name: "Eminem", ranking: 1 }],
+ *   "top_listened_musics": [{ music_name: "Lose Yourself", artist_name: "Eminem", ranking: 1 }]
+ * }
  */
 export default async function handler(req, res) {
   // Vérifie la méthode HTTP
@@ -126,7 +131,9 @@ export default async function handler(req, res) {
   const { userId } = req.query;
 
   // Vérifie le paramètre requis
-  if (!userId) return res.status(400).json({ error: '`userId` est requis.' });
+  if (!userId || !isValidUserId(userId)) {
+    return res.status(400).json({ error: 'Paramètre `userId` manquant ou invalide.' });
+  }
 
   try {
     // Connexion à la base de données
@@ -141,13 +148,12 @@ export default async function handler(req, res) {
 
     const stats = await service.getCompleteStats(userId);
 
-    if (!stats || (!stats.top_listened_artists?.length && !stats.top_listened_musics?.length)) {
+    if (isUserStatsEmpty(stats)) {
       return res.status(404).json({ error: 'Aucune statistique trouvée pour cet utilisateur.' });
     }
 
     res.status(200).json({
-      user_id: Number(userId),
-      music_platform: stats.music_platform || null,
+      user_id: userId,
       favorite_genre: stats.favorite_genre || null,
       top_listened_artists: stats.top_listened_artists || [],
       top_listened_musics: stats.top_listened_musics || []

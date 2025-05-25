@@ -7,6 +7,7 @@ import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.j
 import connectToDatabase from 'infrastructure/database/mongooseClient.js';
 import MongoUserStatsRepository from 'infrastructure/database/mongo/MongoUserStatsRepository.js';
 import MusicStatsService from 'core/services/musicStatsService.js';
+import { isValidUserId } from 'infrastructure/utils/inputValidator.js';
 
 /**
  * @swagger
@@ -69,8 +70,8 @@ import MusicStatsService from 'core/services/musicStatsService.js';
 /**
  * Handler API GET `/api/statistics/favorite-genre`
  *
- * @param {Object} req - Requête HTTP entrante
- * @param {Object} res - Réponse HTTP sortante
+ * @param {Request} req - Objet de la requête HTTP
+ * @param {Response} res - Objet de la réponse HTTP
  * @returns {Promise<void>} Réponse JSON contenant le genre favori
  */
 export default async function handler(req, res) {
@@ -80,11 +81,14 @@ export default async function handler(req, res) {
   const { userId } = req.query;
 
   // Vérifie le paramètre requis
-  if (!userId) return res.status(400).json({ error: 'userId manquant' });
+  if (!userId || !isValidUserId(userId)) {
+    return res.status(400).json({ error: 'Paramètre `userId` manquant ou invalide.' });
+  }
 
   try {
     // Connexion à la base de données
-    await connectToDatabase();
+    const connected = await connectToDatabase();
+    if (!connected) return res.status(500).json({ error: 'Erreur de connexion à la base de données.' });
 
     // Service + repo injectés
     const service = new MusicStatsService({

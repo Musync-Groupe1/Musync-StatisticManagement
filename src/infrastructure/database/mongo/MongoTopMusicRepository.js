@@ -15,12 +15,12 @@ export default class MongoTopMusicRepository extends TopMusicRepository {
   /**
    * Récupère toutes les musiques les plus écoutées par un utilisateur.
    *
-   * @param {string|number} userId - Identifiant de l'utilisateur
+   * @param {string} userId - Identifiant de l'utilisateur
    * @returns {Promise<Array<Object>>} Liste des musiques du top triées par classement
    */
   async findAllByUserId(userId) {
     return TopListenedMusic.find({ user_id: userId })
-        .select('-_id -__v -user_id')
+        .select('-_id -__v -user_id -createdAt -updatedAt')
         .sort({ ranking: 1 })
         .lean();
   }
@@ -28,7 +28,7 @@ export default class MongoTopMusicRepository extends TopMusicRepository {
   /**
    * Récupère une musique selon le classement (ranking) de l'utilisateur.
    *
-   * @param {string|number} userId - ID de l’utilisateur
+   * @param {string} userId - ID de l’utilisateur
    * @param {number} ranking - Classement de la musique (1, 2 ou 3)
    * @returns {Promise<Object|null>} La musique trouvée ou `null` si absente
    */
@@ -40,7 +40,7 @@ export default class MongoTopMusicRepository extends TopMusicRepository {
    * Met à jour ou insère une liste de musiques dans le top d’un utilisateur.
    * Utilise `findOneAndUpdate` pour garantir l’unicité par utilisateur + musique + artiste.
    *
-   * @param {string|number} userId - ID de l'utilisateur
+   * @param {string} userId - ID de l'utilisateur
    * @param {Array<Object>} musicsArray - Liste des musiques à sauvegarder
    * @returns {Promise<Array<Object>>} Liste des musiques effectivement enregistrées
    *
@@ -69,16 +69,8 @@ export default class MongoTopMusicRepository extends TopMusicRepository {
   /**
    * Supprime toutes les musiques liées à un utilisateur donné.
    *
-   * @param {string|number} userId - Identifiant de l'utilisateur
+   * @param {string} userId - Identifiant de l'utilisateur
    * @returns {Promise<number>} Nombre de documents supprimés
-   *
-   * @example
-   * const deleted = await repo.deleteAllByUserId(101);
-   * if (deleted > 0) {
-   *   console.log(`${deleted} musiques supprimées.`);
-   * } else {
-   *   console.log('Aucune musique à supprimer.');
-   * }
    */
   async deleteAllByUserId(userId) {
     const res = await TopListenedMusic.deleteMany({ user_id: userId });

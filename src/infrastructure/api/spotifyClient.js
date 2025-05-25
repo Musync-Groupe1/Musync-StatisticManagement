@@ -56,20 +56,6 @@ export default class SpotifyClient {
   }
 
   /**
-   * Rafraîchit un access token expiré à l’aide du refresh token.
-   *
-   * @returns {Promise<string>} Nouveau token d’accès
-   * @throws {Error} Si le token est introuvable
-   */
-  async refreshAccessToken() {
-    const data = await this.client.refreshAccessToken();
-    const newToken = data.body?.access_token;
-    if (!newToken) throw new Error("Impossible de rafraîchir le token.");
-    this.client.setAccessToken(newToken);
-    return newToken;
-  }
-
-  /**
    * Récupère les artistes les plus écoutés de l’utilisateur.
    *
    * @param {number} limit - Nombre d’artistes à récupérer (par défaut 3)

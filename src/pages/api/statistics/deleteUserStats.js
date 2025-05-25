@@ -1,15 +1,14 @@
 /**
  * @fileoverview Endpoint API pour supprimer toutes les statistiques d’un utilisateur.
- * Supprime les données liées à la plateforme, au genre préféré, au top artistes et musiques.
+ * Supprime la plateforme, le genre musical, les artistes et musiques les plus écoutés.
+ * Déclenche également un message Kafka (`USER_STATS_DELETED`) si suppression effective.
  */
 
 import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
 import connectToDatabase from 'infrastructure/database/mongooseClient.js';
-
-import UserCleanupService from 'core/services/userCleanupService.js';
-import MongoUserStatsRepository from 'infrastructure/database/mongo/MongoUserStatsRepository.js';
-import MongoTopArtistRepository from 'infrastructure/database/mongo/MongoTopArtistRepository.js';
-import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusicRepository.js';
+import { createUserCleanupService } from 'core/factories/userCleanupServiceFactory.js';
+import { publishStatDeleted } from 'core/events/producers/StatDeletedProducer.js';
+import { isValidUserId } from 'infrastructure/utils/inputValidator.js';
 
 /**
  * @swagger
@@ -22,16 +21,17 @@ import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusic
  *       - genre préféré
  *       - artistes top 3
  *       - musiques top 3
+ *       Envoie ensuite un message Kafka `USER_STATS_DELETED` si la suppression a été effectuée.
  *     parameters:
  *       - in: query
  *         name: userId
  *         required: true
- *         description: Identifiant de l’utilisateur à nettoyer
  *         schema:
  *           type: string
+ *         description: Identifiant de l'utilisateur cible
  *     responses:
  *       200:
- *         description: Suppression réussie
+ *         description: Données supprimées avec succès
  *         content:
  *           application/json:
  *             schema:
@@ -39,9 +39,9 @@ import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusic
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Toutes les données utilisateur ont été supprimées."
+ *                   example: Toutes les données utilisateur ont été supprimées.
  *       400:
- *         description: Paramètre `userId` manquant
+ *         description: Paramètre manquant ou invalide
  *         content:
  *           application/json:
  *             schema:
@@ -49,7 +49,17 @@ import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusic
  *               properties:
  *                 error:
  *                   type: string
- *                   example: "Le champ `userId` est requis."
+ *                   example: Le champ `userId` est requis et doit être un entier valide.
+ *       404:
+ *         description: Aucune donnée trouvée pour cet utilisateur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Aucune statistique trouvée pour cet utilisateur.
  *       500:
  *         description: Erreur interne serveur
  *         content:
@@ -59,35 +69,77 @@ import MongoTopMusicRepository from 'infrastructure/database/mongo/MongoTopMusic
  *               properties:
  *                 error:
  *                   type: string
- *                   example: "Erreur interne du serveur."
+ *                   example: Erreur interne du serveur.
  */
 
+/**
+ * Handler API DELETE `/api/statistics/deleteUserStats`
+ *
+ * @param {Request} req - Objet de la requête HTTP
+ * @param {Response} res - Objet de la réponse HTTP
+ */
 export default async function handler(req, res) {
-  // Vérifie la méthode HTTP
   if (!validateMethod(req, res, ['DELETE'])) return;
 
-  const { userId } = req.query;
-
-  if (!userId) {
-    return res.status(400).json({ error: 'Le champ `userId` est requis.' });
-  }
-
   try {
-    await connectToDatabase();
-
-    const service = new UserCleanupService({
-      userStatsRepo: new MongoUserStatsRepository(),
-      artistRepo: new MongoTopArtistRepository(),
-      musicRepo: new MongoTopMusicRepository(),
-    });
-
-    await service.deleteAllUserData(userId);
-
-    return res.status(200).json({
-      message: 'Toutes les données utilisateur ont été supprimées.'
-    });
+    const { userId } = req.query;
+    const result = await cleanupUserStatsHandler(userId);
+    return res.status(result.status).json(result.body);
   } catch (error) {
-    console.error('Erreur dans /api/statistics/cleanup :', error);
+    console.error('Erreur dans /api/statistics/deleteUserStats :', error);
     responseError(res);
   }
+}
+
+/**
+ * Supprime toutes les statistiques d’un utilisateur si celui-ci existe,
+ * et publie un message Kafka si la suppression a eu lieu.
+ *
+ * @param {string} userId - Identifiant de l’utilisateur
+ * @returns {Promise<{status: number, body: object}>} Résultat de la suppression
+ */
+async function cleanupUserStatsHandler(userId) {
+  // Vérification des paramètres requis
+  if (!userId || !isValidUserId(userId)) {
+    return {
+      status: 400,
+      body: { error: 'Le champ `userId` est requis et doit être un UUID valide.' },
+    };
+  }
+
+  const connected = await connectToDatabase();
+  if (!connected) {
+    return {
+      status: 500,
+      body: { error: 'Erreur de connexion à la base de données.' },
+    };
+  }
+
+  const service = createUserCleanupService();
+
+  try {
+    const deleted = await service.deleteAllUserData(userId);
+
+    // Si rien n’a été supprimé, cela veut dire que l’utilisateur n’existait pas
+    if (!deleted) {
+      return {
+        status: 404,
+        body: { error: 'Aucune statistique trouvée pour cet utilisateur.' }
+      };
+    }
+
+    // Kafka : seulement si suppression effective
+    await publishStatDeleted(userId);
+
+    return {
+      status: 200,
+      body: { message: 'Toutes les données utilisateur ont été supprimées.' }
+    };
+  } catch (error) {
+    console.error('Erreur dans /api/statistics/deleteUserStats :', error);
+    return {
+      status: 500,
+      body: { error: 'Erreur interne du serveur.' }
+    };
+  }  
 }

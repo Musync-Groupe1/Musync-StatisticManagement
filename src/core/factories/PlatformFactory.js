@@ -1,13 +1,12 @@
 /**
  * @fileoverview Factory permettant de retourner la stratégie d’intégration
- * appropriée pour une plateforme musicale (Spotify, Deezer, etc.)
+ * appropriée pour une plateforme musicale (Spotify, etc.)
  * 
  * Ce module suit le **Pattern Factory** : il encapsule la logique de sélection
  * de la stratégie en fonction de la plateforme passée.
  */
 
 import SpotifyStrategy from 'core/strategies/SpotifyStrategy.js';
-// import DeezerStrategy from 'strategies/DeezerStrategy.js';
 
 /**
  * Retourne une instance d'une stratégie de plateforme musicale, initialisée.
@@ -34,10 +33,6 @@ export async function getPlatformStrategy(platform, code) {
 
       return strategy;
     }
-
-    case 'deezer':
-      // Future implémentation
-      throw new Error("Deezer non encore disponible.");
 
     default:
       // Plateforme non supportée

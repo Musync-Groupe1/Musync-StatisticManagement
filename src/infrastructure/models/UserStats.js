@@ -1,38 +1,80 @@
+/**
+ * @fileoverview Modèle Mongoose pour les statistiques musicales d’un utilisateur.
+ * Ce schéma regroupe les préférences musicales (genre, plateforme) et les tops musiques/artistes.
+ */
+
 import mongoose from 'mongoose';
 
 /**
  * Schéma Mongoose pour les statistiques utilisateur.
- * Ce schéma définit la structure des données des statistiques d'un utilisateur, 
- * incluant ses artistes et morceaux les plus écoutés.
+ * Ce document représente les données agrégées extraites de plateformes musicales (Spotify, Deezer...).
  */
 const UserMusicStatisticSchema = new mongoose.Schema({
-  // Identifiant de l'utilisateur. 
-  // Obligatoire pour relier les statistiques à un utilisateur spécifique.
+  /**
+   * Identifiant unique de l'utilisateur.
+   * Chaque utilisateur ne peut avoir qu’un seul document de statistiques.
+   */
   user_id: { 
-    type: Number, 
-    required: true, 
-    unique: true
+    type: String,
+    ref: 'User',
+    required: true,
+    unique: true,
+    index: true,
   },
+  /** Genre musical préféré de l’utilisateur. */
   favorite_genre: {
     type: String,
-    required: true
+    required: true,
+    trim: true,
   },
-  // Plateforme de musique utilisée. 
-  // Obligatoire pour savoir d'où proviennent les données (Spotify, Deezeer, etc.).
-  music_platform: {
-    type: String,
-    enum: ['spotify', 'deezer'],
-    required: true
+  /**
+   * Références vers les artistes les plus écoutés.
+   * Limité à 3 artistes maximum.
+   */
+  top_listened_artists: {
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TopListenedArtist',
+      },
+    ],
+    validate: {
+      validator: function (arr) {
+        return arr.length <= 3;
+      },
+      message: 'Un utilisateur ne peut avoir que 3 artistes dans son top.',
+    },
   },
-  // Liste des artistes les plus écoutés.
-  // Chaque objet contient le nom de l'artiste et son classement.
-  top_listened_artists: [{ type: mongoose.Schema.Types.ObjectId, ref: 'TopListenedArtist' }],
-  top_listened_musics: [{ type: mongoose.Schema.Types.ObjectId, ref: 'TopListenedMusic' }]
-}, { versionKey: false });
+  /**
+   * Références vers les musiques les plus écoutées.
+   * Limité à 3 musiques maximum.
+   */
+  top_listened_musics: {
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TopListenedMusic',
+      },
+    ],
+    validate: {
+      validator: function (arr) {
+        return arr.length <= 3;
+      },
+      message: 'Un utilisateur ne peut avoir que 3 musiques dans son top.',
+    },
+  },
+},
+{
+  versionKey: false,
+  timestamps: true,
+}
+);
 
 /**
- * Le modèle de Mongoose pour les statistiques utilisateur.
- * Si le modèle a déjà été défini, il est utilisé ; sinon, un nouveau modèle est créé.
+ * Modèle Mongoose pour la collection `UserMusicStatistic`.
+ * Vérifie si le modèle est déjà déclaré, sinon le crée.
+ *
+ * @constant {mongoose.Model}
  */
 const UserMusicStatistic = mongoose.models.UserMusicStatistic || mongoose.model(
   'UserMusicStatistic',

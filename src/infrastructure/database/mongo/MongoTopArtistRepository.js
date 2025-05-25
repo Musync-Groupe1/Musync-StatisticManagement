@@ -15,12 +15,12 @@ export default class MongoTopArtistRepository extends TopArtistRepository {
   /**
    * Récupère tous les artistes les plus écoutés d’un utilisateur.
    *
-   * @param {string|number} userId - Identifiant unique de l’utilisateur
+   * @param {string} userId - Identifiant unique de l’utilisateur
    * @returns {Promise<Array<Object>>} Liste des artistes triés selon leur ranking
    */
   async findAllByUserId(userId) {
     return TopListenedArtist.find({ user_id: userId })
-        .select('-_id -__v -user_id')
+        .select('-_id -__v -user_id -createdAt -updatedAt')
         .sort({ ranking: 1 })
         .lean();
   }
@@ -28,7 +28,7 @@ export default class MongoTopArtistRepository extends TopArtistRepository {
   /**
    * Récupère un artiste en fonction de son classement dans le top.
    *
-   * @param {string|number} userId - ID de l’utilisateur
+   * @param {string} userId - ID de l’utilisateur
    * @param {number} ranking - Classement de l’artiste (ex : 1, 2, 3)
    * @returns {Promise<Object|null>} L’artiste correspondant ou `null` s’il n’existe pas
    */
@@ -40,15 +40,9 @@ export default class MongoTopArtistRepository extends TopArtistRepository {
    * Met à jour ou insère plusieurs artistes dans le top d’un utilisateur.
    * Chaque artiste est upserté individuellement via `findOneAndUpdate`.
    *
-   * @param {string|number} userId - Identifiant utilisateur
+   * @param {string} userId - Identifiant utilisateur
    * @param {Array<Object>} artistsArray - Liste des artistes à insérer ou mettre à jour
    * @returns {Promise<Array<Object>>} Liste des artistes sauvegardés
-   *
-   * @example
-   * await repo.upsertMany(42, [
-   *   { artist_name: 'Drake', ranking: 1 },
-   *   { artist_name: 'Kendrick Lamar', ranking: 2 },
-   * ]);
    */
   async upsertMany(userId, artistsArray) {
     return Promise.all(
@@ -65,16 +59,8 @@ export default class MongoTopArtistRepository extends TopArtistRepository {
   /**
    * Supprime tous les artistes associés à un utilisateur donné.
    *
-   * @param {string|number} userId - Identifiant de l'utilisateur
+   * @param {string} userId - Identifiant de l'utilisateur
    * @returns {Promise<number>} Nombre de documents supprimés
-   *
-   * @example
-   * const deleted = await repo.deleteAllByUserId(99);
-   * if (deleted > 0) {
-   *   console.log(`${deleted} artistes supprimés.`);
-   * } else {
-   *   console.log('Aucun artiste à supprimer.');
-   * }
    */
   async deleteAllByUserId(userId) {
     const res = await TopListenedArtist.deleteMany({ user_id: userId });

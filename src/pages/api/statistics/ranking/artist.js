@@ -4,6 +4,7 @@
  */
 
 import { validateMethod, responseError } from 'infrastructure/utils/apiHandler.js';
+import { isValidUserId, isValidRanking } from 'infrastructure/utils/inputValidator.js';
 import connectToDatabase from 'infrastructure/database/mongooseClient.js';
 import MongoTopArtistRepository from 'infrastructure/database/mongo/MongoTopArtistRepository.js';
 import MusicStatsService from 'core/services/musicStatsService.js';
@@ -79,8 +80,8 @@ import MusicStatsService from 'core/services/musicStatsService.js';
 /**
  * Handler API GET `/api/statistics/rankings/artist`
  *
- * @param {Object} req - Objet de la requête HTTP
- * @param {Object} res - Objet de la réponse HTTP
+ * @param {Request} req - Objet de la requête HTTP
+ * @param {Response} res - Objet de la réponse HTTP
  * @returns {Promise<void>} - Résultat de la requête, JSON
  */
 export default async function handler(req, res) {
@@ -91,6 +92,14 @@ export default async function handler(req, res) {
 
   // Vérifie les paramètres requis
   if (!userId || !ranking) return res.status(400).json({ error: 'userId et/ou ranking manquant(s)' });
+
+  if (!isValidUserId(userId)) {
+    return res.status(400).json({ error: '`userId` doit être un UUID valide' });
+  }
+
+  if (!isValidRanking(ranking)) {
+    return res.status(400).json({ error: '`ranking` doit être un entier entre 1 et 3' });
+  }
 
   try {
     // Connexion à la base de données
