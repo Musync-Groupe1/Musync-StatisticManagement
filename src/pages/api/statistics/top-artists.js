@@ -37,9 +37,9 @@ import { isValidUserId } from 'infrastructure/utils/inputValidator.js';
  *                     type: object
  *                     properties:
  *                       user_id:
- *                         type: Number
+ *                         type: string
  *                         description: L'identifiant de l'utilisateur
- *                         example: 1 
+ *                         example: "fd961a0f-c94c-47ca-b0d9-8592e1fb79d1"
  *                       artist_name:
  *                         type: string
  *                         maxLength: 255

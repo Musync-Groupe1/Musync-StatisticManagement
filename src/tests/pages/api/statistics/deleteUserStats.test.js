@@ -72,7 +72,7 @@ describe('/api/statistics/deleteUserStats - DeleteUserStats handler', () => {
   it('shouldReturn500WhenDatabaseConnectionFails', async () => {
     connectToDatabase.mockResolvedValue(false);
 
-    const req = httpMocks.createRequest({ method: 'DELETE', query: { userId: '42' } });
+    const req = httpMocks.createRequest({ method: 'DELETE', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' } });
     const res = httpMocks.createResponse();
 
     await handler(req, res);
@@ -94,7 +94,7 @@ describe('/api/statistics/deleteUserStats - DeleteUserStats handler', () => {
       deleteAllUserData: jest.fn(async () => { throw error; })
     });
 
-    const req = httpMocks.createRequest({ method: 'DELETE', query: { userId: '42' } });
+    const req = httpMocks.createRequest({ method: 'DELETE', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' } });
     const res = httpMocks.createResponse({ eventEmitter: (await import('events')).EventEmitter });
 
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -129,13 +129,13 @@ describe('/api/statistics/deleteUserStats - DeleteUserStats handler', () => {
     createUserCleanupService.mockReturnValue({ deleteAllUserData });
     publishStatDeleted.mockResolvedValue();
 
-    const req = httpMocks.createRequest({ method: 'DELETE', query: { userId: '42' } });
+    const req = httpMocks.createRequest({ method: 'DELETE', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' } });
     const res = httpMocks.createResponse({ eventEmitter: (await import('events')).EventEmitter });
 
     await new Promise((resolve) => {
       res.on('end', () => {
-        expect(deleteAllUserData).toHaveBeenCalledWith('42');
-        expect(publishStatDeleted).toHaveBeenCalledWith('42');
+        expect(deleteAllUserData).toHaveBeenCalledWith('fd961a0f-c94c-47ca-b0d9-8592e1fb79d1');
+        expect(publishStatDeleted).toHaveBeenCalledWith('fd961a0f-c94c-47ca-b0d9-8592e1fb79d1');
         expect(res._getStatusCode()).toBe(200);
         expect(res._getData()).toMatch(/supprimées/);
         resolve();
@@ -151,7 +151,7 @@ describe('/api/statistics/deleteUserStats - DeleteUserStats handler', () => {
     const deleteAllUserData = jest.fn().mockResolvedValue(null);
     createUserCleanupService.mockReturnValue({ deleteAllUserData });
 
-    const req = httpMocks.createRequest({ method: 'DELETE', query: { userId: '999' } });
+    const req = httpMocks.createRequest({ method: 'DELETE', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' } });
     const res = httpMocks.createResponse();
 
     await handler(req, res);
@@ -159,5 +159,39 @@ describe('/api/statistics/deleteUserStats - DeleteUserStats handler', () => {
     expect(res._getStatusCode()).toBe(404);
     expect(res._getData()).toMatch(/Aucune statistique trouvée/);
     expect(publishStatDeleted).not.toHaveBeenCalled();
+  });
+
+  /**
+   * GIVEN une exception dans le bloc try du handler global
+   * WHEN une erreur est levée (ex: `createUserCleanupService` est null)
+   * THEN on doit logguer l’erreur et retourner une 500
+   */
+  it('shouldReturn500AndLogIfHandlerThrowsAtTopLevel', async () => {
+    // GIVEN : simulate une erreur en injectant une fonction `createUserCleanupService` non définie
+    connectToDatabase.mockImplementation(() => { throw new Error('Top-level failure'); });
+  
+    const req = httpMocks.createRequest({
+      method: 'DELETE',
+      query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' }
+    });
+  
+    const res = httpMocks.createResponse({ eventEmitter: (await import('events')).EventEmitter });
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  
+    // WHEN / THEN
+    await new Promise((resolve) => {
+      res.on('end', () => {
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Erreur dans /api/statistics/deleteUserStats :',
+          expect.any(Error)
+        );
+        expect(res._getStatusCode()).toBe(500);
+        expect(res._getData()).toMatch(/Erreur interne/);
+        consoleSpy.mockRestore();
+        resolve();
+      });
+  
+      handler(req, res);
+    });
   });
 });

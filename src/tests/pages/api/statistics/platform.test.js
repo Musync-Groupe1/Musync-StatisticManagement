@@ -86,7 +86,10 @@ describe('/api/statistics/platform endpoint', () => {
     // GIVEN
     connectToDatabase.mockRejectedValue(new Error('fail'));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42' } });
+    const req = httpMocks.createRequest({
+        method: 'GET',
+        query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' }
+    });
     const res = httpMocks.createResponse({ eventEmitter: EventEmitter });
 
     // WHEN
@@ -115,7 +118,10 @@ describe('/api/statistics/platform endpoint', () => {
       findPlatformByUserId: jest.fn().mockResolvedValue(null),
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42' } });
+    const req = httpMocks.createRequest({
+        method: 'GET',
+        query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' }
+    });
     const res = httpMocks.createResponse();
 
     // WHEN
@@ -139,7 +145,10 @@ describe('/api/statistics/platform endpoint', () => {
       findPlatformByUserId: jest.fn().mockResolvedValue('spotify'),
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42' } });
+    const req = httpMocks.createRequest({
+        method: 'GET',
+        query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' }
+    });
     const res = httpMocks.createResponse();
 
     // WHEN

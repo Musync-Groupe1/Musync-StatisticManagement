@@ -94,7 +94,7 @@ export default async function handler(req, res) {
   if (!userId || !ranking) return res.status(400).json({ error: 'userId et/ou ranking manquant(s)' });
 
   if (!isValidUserId(userId)) {
-    return res.status(400).json({ error: '`userId` doit être un entier valide' });
+    return res.status(400).json({ error: '`userId` doit être un UUID valide' });
   }
 
   if (!isValidRanking(ranking)) {

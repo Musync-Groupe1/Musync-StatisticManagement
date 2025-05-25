@@ -72,7 +72,10 @@ describe('/api/statistics/top-musics endpoint', () => {
     // GIVEN
     connectToDatabase.mockRejectedValue(new Error('fail'));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42' } });
+    const req = httpMocks.createRequest({
+        method: 'GET',
+        query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' }
+    });
     const res = httpMocks.createResponse({ eventEmitter: EventEmitter });
 
     // WHEN
@@ -95,7 +98,10 @@ describe('/api/statistics/top-musics endpoint', () => {
       getUserTopListenedMusics: jest.fn().mockResolvedValue([])
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42' } });
+    const req = httpMocks.createRequest({
+        method: 'GET',
+        query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' }
+    });
     const res = httpMocks.createResponse();
 
     // WHEN
@@ -116,7 +122,10 @@ describe('/api/statistics/top-musics endpoint', () => {
       getUserTopListenedMusics: jest.fn().mockResolvedValue(fakeMusics)
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42' } });
+    const req = httpMocks.createRequest({
+        method: 'GET',
+        query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' }
+    });
     const res = httpMocks.createResponse();
 
     // WHEN

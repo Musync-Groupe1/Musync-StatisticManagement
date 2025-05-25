@@ -72,7 +72,7 @@ describe('/api/statistics/ranking/artist - handler', () => {
   it('shouldReturn500IfDbFails', async () => {
     connectToDatabase.mockRejectedValue(new Error('fail'));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '1', ranking: '1' } });
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1', ranking: '1' } });
     const res = httpMocks.createResponse({ eventEmitter: EventEmitter });
 
     await new Promise(resolve => {
@@ -97,7 +97,7 @@ describe('/api/statistics/ranking/artist - handler', () => {
       getArtistByRanking: jest.fn().mockResolvedValue(null)
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '1', ranking: '2' } });
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1', ranking: '2' } });
     const res = httpMocks.createResponse();
 
     await handler(req, res);
@@ -119,7 +119,7 @@ describe('/api/statistics/ranking/artist - handler', () => {
       getArtistByRanking: jest.fn().mockResolvedValue(artist)
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '1', ranking: '1' } });
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1', ranking: '1' } });
     const res = httpMocks.createResponse();
 
     await handler(req, res);
@@ -127,4 +127,47 @@ describe('/api/statistics/ranking/artist - handler', () => {
     expect(res._getStatusCode()).toBe(200);
     expect(JSON.parse(res._getData())).toEqual({ artist_name: 'The Weeknd' });
   });
+
+  /**
+   * GIVEN une requête avec un userId invalide
+   * WHEN on appelle le handler
+   * THEN on doit retourner une 400 avec message explicite
+   */
+  it('shouldReturn400IfUserIdIsInvalid', async () => {
+    const req = httpMocks.createRequest({
+      method: 'GET',
+      query: { userId: 'not-a-uuid', ranking: '2' }
+    });
+    const res = httpMocks.createResponse();
+
+    await handler(req, res);
+
+    expect(res._getStatusCode()).toBe(400);
+    expect(JSON.parse(res._getData())).toEqual({
+      error: '`userId` doit être un UUID valide'
+    });
+  });
+
+ /**
+  * GIVEN une requête avec un ranking invalide
+  * WHEN on appelle le handler
+  * THEN on doit retourner une 400 avec message explicite
+  */
+ it('shouldReturn400IfRankingIsInvalid', async () => {
+   const req = httpMocks.createRequest({
+     method: 'GET',
+     query: {
+       userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1',
+       ranking: '5' // valeur invalide
+     }
+   });
+   const res = httpMocks.createResponse();
+
+   await handler(req, res);
+
+   expect(res._getStatusCode()).toBe(400);
+   expect(JSON.parse(res._getData())).toEqual({
+     error: '`ranking` doit être un entier entre 1 et 3'
+   });
+ });
 });

@@ -7,13 +7,11 @@ import {
   
   describe('inputValidator utility functions', () => {
     describe('isValidUserId', () => {
-      it('should return true for integer string', () => {
-        expect(isValidUserId('123')).toBe(true);
+      it('should return true for UUID string', () => {
+        expect(isValidUserId('fd961a0f-c94c-47ca-b0d9-8592e1fb79d1')).toBe(true);
       });
   
-      it('should return true for integer number', () => {
-        expect(isValidUserId(456)).toBe(true);
-      });
+
   
       it('should return false for non-integer string', () => {
         expect(isValidUserId('abc')).toBe(false);

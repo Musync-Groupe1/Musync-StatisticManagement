@@ -27,7 +27,7 @@ export default class MusicStatsService {
   /**
    * Récupère toutes les statistiques musicales d’un utilisateur (genre musical, top 3).
    *
-   * @param {string|number} userId - Identifiant de l'utilisateur
+   * @param {string} userId - Identifiant de l'utilisateur
    * @returns {Promise<Object>} - Objet contenant les statistiques complètes
    */
   async getCompleteStats(userId) {
@@ -45,7 +45,7 @@ export default class MusicStatsService {
   /**
    * Récupère le genre musical préféré de l'utilisateur.
    *
-   * @param {string|number} userId - Identifiant de l'utilisateur
+   * @param {string} userId - Identifiant de l'utilisateur
    * @returns {Promise<string|null>} - Genre musical préféré ou `null` si non défini
    */
   async getFavoriteGenre(userId) {
@@ -56,7 +56,7 @@ export default class MusicStatsService {
   /**
    * Récupère les 3 artistes les plus écoutés par l'utilisateur.
    *
-   * @param {string|number} userId - Identifiant unique de l'utilisateur
+   * @param {string} userId - Identifiant unique de l'utilisateur
    * @returns {Promise<Array<Object>>} - Liste des artistes les plus écoutés triée par ranking
    */
   async getUserTopListenedArtists(userId) {
@@ -70,7 +70,7 @@ export default class MusicStatsService {
   /**
    * Récupère les 3 musiques les plus écoutées par l'utilisateur.
    *
-   * @param {string|number} userId - Identifiant unique de l'utilisateur
+   * @param {string} userId - Identifiant unique de l'utilisateur
    * @returns {Promise<Array<Object>>} - Liste des musiques les plus écoutées triée par ranking
    */
   async getUserTopListenedMusics(userId) {
@@ -84,7 +84,7 @@ export default class MusicStatsService {
   /**
    * Récupère un artiste spécifique du top 3 d’un utilisateur par son classement.
    *
-   * @param {string|number} userId - Identifiant de l'utilisateur
+   * @param {string} userId - Identifiant de l'utilisateur
    * @param {number} ranking - Classement de l’artiste (1, 2 ou 3)
    * @returns {Promise<Object|null>} - L'artiste trouvé ou `null` si absent
    */
@@ -95,7 +95,7 @@ export default class MusicStatsService {
   /**
    * Récupère une musique spécifique du top 3 d’un utilisateur par son classement.
    *
-   * @param {string|number} userId - Identifiant de l'utilisateur
+   * @param {string} userId - Identifiant de l'utilisateur
    * @param {number} ranking - Classement de la musique (1, 2 ou 3)
    * @returns {Promise<Object|null>} - La musique trouvée ou `null` si absente
    */

@@ -19,7 +19,7 @@ let _isConsumerRunning = false;
  * @param {Object} data - Données extraites du message Kafka.
  * @param {Object} data.user - Objet contenant l'ID utilisateur.
  * @param {Array<Object>} data.social_media - Liste des réseaux sociaux liés à l'utilisateur.
- * @returns {{ userId: number, platform: string } | null} - Données utilisateur pertinentes, ou `null` si invalides.
+ * @returns {{ userId: string, platform: string } | null} - Données utilisateur pertinentes, ou `null` si invalides.
  */
 function extractRelevantUserData(data) {
   const userId = data?.user?.user_id;
@@ -99,21 +99,44 @@ async function handleUserMessage(message) {
   }
 }
 
+async function getServiceToken() {
+    const response = await axios.post('http://keycloak:8080/realms/Musync/protocol/openid-connect/token',
+    new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: getEnvVar('KEYCLOAK_CLIENT_ID'),
+      client_secret: getEnvVar('KEYCLOAK_CLIENT_SECRET'),
+    }), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    }
+  );
+
+  return response.data.access_token;
+}
+
 /**
  * Envoie une requête HTTP POST à l'API interne pour créer les statistiques utilisateur.
  *
  * @async
- * @param {number} userId - Identifiant unique de l'utilisateur.
+ * @param {string} userId - Identifiant unique de l'utilisateur.
  * @param {string} platform - Plateforme musicale validée (ex: 'spotify').
  * @returns {Promise<void>}
  */
 async function sendUserToStatisticsApi(userId, platform) {
   try {
     const baseUrl = getEnvVar('BASE_URL');
+    //const token = await getServiceToken();
+
     const response = await axios.post(`${baseUrl}/api/statistics/create`, {
       userId,
       music_platform: platform,
-    });
+    }/*, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    }*/);
+
     console.log(`[Kafka][consumer] Utilisateur ${userId} inséré avec succès.\nStatus: ${response.status}`);
   } catch (err) {
     console.error(`[Kafka][consumer] Échec d’envoi pour user ${userId} (${platform}) :`, err.message);

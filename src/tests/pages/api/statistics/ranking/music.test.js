@@ -70,7 +70,7 @@ describe('/api/statistics/ranking/music (integration test)', () => {
   it('shouldReturn404IfNoMusicFound', async () => {
     connectToDatabaseMock.mockResolvedValue(true);
     mockedFindByUserIdAndRanking.mockResolvedValue(null);
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42', ranking: '1' } });
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1', ranking: '1' } });
     const res = httpMocks.createResponse();
 
     await handler(req, res);
@@ -86,7 +86,7 @@ describe('/api/statistics/ranking/music (integration test)', () => {
   it('shouldReturn200AndMusicNameIfFound', async () => {
     connectToDatabaseMock.mockResolvedValue(true);
     mockedFindByUserIdAndRanking.mockResolvedValue({ music_name: 'Blinding Lights' });
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42', ranking: '2' } });
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1', ranking: '2' } });
     const res = httpMocks.createResponse();
 
     await handler(req, res);
@@ -105,7 +105,7 @@ describe('/api/statistics/ranking/music (integration test)', () => {
       throw new Error('fail');
     });
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42', ranking: '1' } });
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1', ranking: '1' } });
     const res = httpMocks.createResponse({ eventEmitter: (await import('events')).EventEmitter });
 
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -120,4 +120,44 @@ describe('/api/statistics/ranking/music (integration test)', () => {
     expect(res._getData()).toMatch(/erreur interne/i);
     consoleSpy.mockRestore();
   });
+
+  /**
+   * GIVEN : Un userId invalide (non UUID)
+   * WHEN  : Le handler est exécuté
+   * THEN  : Il retourne une 400 avec message explicite
+   */
+  it('shouldReturn400IfUserIdIsInvalid', async () => {
+    const req = httpMocks.createRequest({
+      method: 'GET',
+      query: { userId: 'invalid-user-id', ranking: '1' }
+    });
+    const res = httpMocks.createResponse();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res._getData())).toEqual({
+      error: '`userId` doit être un UUID valide'
+    });
+  });
+
+ /**
+  * GIVEN : Un ranking invalide (hors 1 à 3)
+  * WHEN  : Le handler est exécuté
+  * THEN  : Il retourne une 400 avec message explicite
+  */
+ it('shouldReturn400IfRankingIsInvalid', async () => {
+   const req = httpMocks.createRequest({
+     method: 'GET',
+     query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1', ranking: '9' }
+   });
+   const res = httpMocks.createResponse();
+
+   await handler(req, res);
+
+   expect(res.statusCode).toBe(400);
+   expect(JSON.parse(res._getData())).toEqual({
+     error: '`ranking` doit être un entier entre 1 et 3'
+   });
+ });
 });

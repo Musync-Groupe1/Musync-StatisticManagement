@@ -13,7 +13,7 @@ import mongoose from 'mongoose';
 const TopListenedArtistSchema = new mongoose.Schema({
   /** Identifiant de l’utilisateur. */
   user_id: { 
-    type: Number, 
+    type: String, 
     ref: 'User',
     required: true,
     index: true

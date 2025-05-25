@@ -15,7 +15,7 @@ export default class MongoTopArtistRepository extends TopArtistRepository {
   /**
    * Récupère tous les artistes les plus écoutés d’un utilisateur.
    *
-   * @param {string|number} userId - Identifiant unique de l’utilisateur
+   * @param {string} userId - Identifiant unique de l’utilisateur
    * @returns {Promise<Array<Object>>} Liste des artistes triés selon leur ranking
    */
   async findAllByUserId(userId) {
@@ -28,7 +28,7 @@ export default class MongoTopArtistRepository extends TopArtistRepository {
   /**
    * Récupère un artiste en fonction de son classement dans le top.
    *
-   * @param {string|number} userId - ID de l’utilisateur
+   * @param {string} userId - ID de l’utilisateur
    * @param {number} ranking - Classement de l’artiste (ex : 1, 2, 3)
    * @returns {Promise<Object|null>} L’artiste correspondant ou `null` s’il n’existe pas
    */
@@ -40,7 +40,7 @@ export default class MongoTopArtistRepository extends TopArtistRepository {
    * Met à jour ou insère plusieurs artistes dans le top d’un utilisateur.
    * Chaque artiste est upserté individuellement via `findOneAndUpdate`.
    *
-   * @param {string|number} userId - Identifiant utilisateur
+   * @param {string} userId - Identifiant utilisateur
    * @param {Array<Object>} artistsArray - Liste des artistes à insérer ou mettre à jour
    * @returns {Promise<Array<Object>>} Liste des artistes sauvegardés
    */
@@ -59,7 +59,7 @@ export default class MongoTopArtistRepository extends TopArtistRepository {
   /**
    * Supprime tous les artistes associés à un utilisateur donné.
    *
-   * @param {string|number} userId - Identifiant de l'utilisateur
+   * @param {string} userId - Identifiant de l'utilisateur
    * @returns {Promise<number>} Nombre de documents supprimés
    */
   async deleteAllByUserId(userId) {

@@ -39,10 +39,10 @@ import { isValidUserId, isValidMusicPlatform } from 'infrastructure/utils/inputV
  *       - in: query
  *         name: platform
  *         required: false
- *         description: Plateforme musicale ciblée (spotify, deezer...)
+ *         description: Plateforme musicale ciblée (spotify, ...)
  *         schema:
  *           type: string
- *           enum: [spotify, deezer]
+ *           enum: [spotify]
  *       - in: query
  *         name: code
  *         required: false
@@ -130,17 +130,17 @@ export default async function handler(req, res) {
  * @async
  * @function handleOAuthRedirect
  * @param {Response} res  - Objet de réponse HTTP Next.js
- * @param {string|number} userId - Identifiant utilisateur reçu dans la requête
+ * @param {string} userId - Identifiant utilisateur reçu dans la requête
  * @returns {Promise<Response>}  - Redirection vers l'URL OAuth ou erreur
  */
 async function handleOAuthRedirect(res, userId) {
-  if (!isValidUserId(userId)) {
+  if (!userId || !isValidUserId(userId)) {
     return res.status(400).json({ error: 'Paramètre `userId` manquant ou invalide.' });
   }
 
   await connectToDatabase();
   const userService = new UserService({ userRepo: new MongoUserRepository() });
-  const user = await userService.findByUserId(Number(userId));
+  const user = await userService.findByUserId(userId);
 
   if (!user) {
     return res.status(404).json({ error: 'Utilisateur introuvable.' });
@@ -180,7 +180,7 @@ async function handleOAuthCallback(res, code, state) {
     return res.status(400).json({ error: 'State invalide ou corrompu : ' + err.message });
   }
 
-  const resolvedUserId = Number(parsedState.userId);
+  const resolvedUserId = parsedState.userId;
   const resolvedPlatform = parsedState.platform;
 
   if (!isValidUserId(resolvedUserId) || !isValidMusicPlatform(resolvedPlatform)) {

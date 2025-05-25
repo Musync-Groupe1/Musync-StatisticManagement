@@ -11,11 +11,12 @@ const ALLOWED_PLATFORMS = ['spotify'];
  * Schéma utilisateur : identifiant + plateforme musicale utilisée
  */
 const UserSchema = new mongoose.Schema({
-  /** Identifiant unique de l’utilisateur. */
+  /** Identifiant unique de l’utilisateur (UUID au format chaîne). */
   user_id: {
-    type: Number,
+    type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true
   },
   /** Plateforme musicale utilisée par l'utilisateur. */
   music_platform: {

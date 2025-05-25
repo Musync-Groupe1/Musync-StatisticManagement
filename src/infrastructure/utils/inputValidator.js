@@ -13,24 +13,21 @@ import validator from 'validator';
 const ALLOWED_PLATFORMS = ['spotify'];
 
 /**
- * Vérifie que l'identifiant utilisateur est un entier valide (sous forme string ou number).
+ * Vérifie que l'identifiant utilisateur est un UUID valide (sous forme string).
  *
  * @function isValidUserId
- * @param {string|number} userId - Identifiant à valider
+ * @param {string} userId - Identifiant à valider
  * @returns {boolean} - `true` si c’est un entier valide, sinon `false`
  */
 export function isValidUserId(userId) {
-  return (
-    (typeof userId === 'string' && validator.isInt(userId)) ||
-    (typeof userId === 'number' && Number.isInteger(userId))
-  );
+  return typeof userId === 'string' && validator.isUUID(userId, 4);
 }
 
 /**
  * Vérifie que le classement (`ranking`) est bien compris entre 1 et 3.
  *
  * @function isValidRanking
- * @param {string|number} ranking - Valeur de classement à valider
+ * @param {number} ranking - Valeur de classement à valider
  * @returns {boolean} - `true` si valide, sinon `false`
  */
 export function isValidRanking(ranking) {

@@ -15,7 +15,7 @@ import kafkaConfig from 'infrastructure/kafka/kafkaConfig.js';
  * @async
  * @function publishStatUpdated
  * @param {Object} payload - Données statistiques utilisateur
- * @param {string|number} payload.userId - Identifiant unique de l’utilisateur
+ * @param {string} payload.userId - Identifiant unique de l’utilisateur
  * @param {string} [payload.favorite_genre] - Genre musical préféré
  * @param {Array<Object>} [payload.top_artists] - Top artistes
  * @param {Array<Object>} [payload.top_musics] - Top musiques

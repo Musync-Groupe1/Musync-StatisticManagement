@@ -95,7 +95,7 @@ export default async function handler(req, res) {
  * Supprime toutes les statistiques d’un utilisateur si celui-ci existe,
  * et publie un message Kafka si la suppression a eu lieu.
  *
- * @param {string|number} userId - Identifiant de l’utilisateur
+ * @param {string} userId - Identifiant de l’utilisateur
  * @returns {Promise<{status: number, body: object}>} Résultat de la suppression
  */
 async function cleanupUserStatsHandler(userId) {
@@ -103,7 +103,7 @@ async function cleanupUserStatsHandler(userId) {
   if (!userId || !isValidUserId(userId)) {
     return {
       status: 400,
-      body: { error: 'Le champ `userId` est requis et doit être un entier valide.' },
+      body: { error: 'Le champ `userId` est requis et doit être un UUID valide.' },
     };
   }
 

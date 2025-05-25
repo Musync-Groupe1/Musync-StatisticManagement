@@ -10,7 +10,7 @@ export default class UserMusicStats {
    * Crée une instance de `UserMusicStats`.
    *
    * @param {Object} params - Paramètres d'initialisation
-   * @param {string|number} params.userId - Identifiant unique de l’utilisateur
+   * @param {string} params.userId - Identifiant unique de l’utilisateur
    * @param {string|null} params.favoriteGenre - Genre musical favori
    * @param {Array<Object>} [params.topArtists=[]] - Liste des artistes les plus écoutés
    * @param {Array<Object>} [params.topMusics=[]] - Liste des musiques les plus écoutées
@@ -25,7 +25,7 @@ export default class UserMusicStats {
   /**
    * Méthode utilitaire pour générer un objet vide pour un utilisateur donné.
    *
-   * @param {string|number} userId - Identifiant de l'utilisateur
+   * @param {string} userId - Identifiant de l'utilisateur
    * @returns {UserMusicStats} - Instance vide de l'entité
    */
   static empty(userId) {

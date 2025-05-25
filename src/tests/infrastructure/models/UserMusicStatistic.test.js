@@ -50,7 +50,7 @@ describe('UserMusicStatistic model', () => {
 
     // THEN
     expect(saved._id).toBeDefined();
-    expect(saved.user_id).toBe(1);
+    expect(saved.user_id).toBe("1");
   });
 
   /**

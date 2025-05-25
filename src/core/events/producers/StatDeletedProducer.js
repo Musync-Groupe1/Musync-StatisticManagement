@@ -14,7 +14,7 @@ import kafkaConfig from 'infrastructure/kafka/kafkaConfig.js';
  *
  * @async
  * @function publishStatDeleted
- * @param {string|number} userId - Identifiant unique de l’utilisateur
+ * @param {string} userId - Identifiant unique de l’utilisateur
  * @returns {Promise<void>} - Ne retourne rien, loggue le statut de l’envoi
  *
  * @example
@@ -42,7 +42,7 @@ export async function publishStatDeleted(userId) {
  * Génère le message Kafka JSON à envoyer pour la suppression des stats utilisateur.
  *
  * @private
- * @param {string|number} userId - Identifiant utilisateur
+ * @param {string} userId - Identifiant utilisateur
  * @returns {Object} - Objet formaté pour Kafka
  */
 function buildUserStatDeletedMessage(userId) {

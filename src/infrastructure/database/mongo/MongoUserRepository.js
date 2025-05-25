@@ -15,7 +15,7 @@ export default class MongoUserRepository extends UserRepository {
   /**
    * Récupère la plateforme musicale utilisée par un utilisateur.
    *
-   * @param {string|number} userId - Identifiant unique de l’utilisateur
+   * @param {string} userId - Identifiant unique de l’utilisateur
    * @returns {Promise<string|null>} Nom de la plateforme ou `null` si non trouvée
    */
   async findPlatformByUserId(userId) {
@@ -26,7 +26,7 @@ export default class MongoUserRepository extends UserRepository {
   /**
    * Crée ou met à jour la plateforme musicale utilisée par un utilisateur.
    *
-   * @param {string|number} userId - Identifiant unique de l’utilisateur
+   * @param {string} userId - Identifiant unique de l’utilisateur
    * @param {string} platform - Plateforme musicale (spotify, soundcloud, etc.)
    * @returns {Promise<Object>} Document utilisateur sauvegardé
    */
@@ -41,7 +41,7 @@ export default class MongoUserRepository extends UserRepository {
   /**
    * Supprime l’entrée utilisateur liée à la plateforme musicale.
    *
-   * @param {string|number} userId - Identifiant unique de l’utilisateur
+   * @param {string} userId - Identifiant unique de l’utilisateur
    * @returns {Promise<number>} Nombre de documents supprimés (0 ou 1)
    */
   async deleteByUserId(userId) {
@@ -52,7 +52,7 @@ export default class MongoUserRepository extends UserRepository {
   /**
    * Vérifie si un utilisateur existe en base.
    *
-   * @param {string|number} userId - Identifiant unique de l'utilisateur
+   * @param {string} userId - Identifiant unique de l'utilisateur
    * @returns {Promise<boolean>} - `true` s’il existe, sinon `false`
    */
   async exists(userId) {
@@ -62,7 +62,7 @@ export default class MongoUserRepository extends UserRepository {
   /**
    * Récupère un utilisateur complet par son ID.
    *
-   * @param {string|number} userId
+   * @param {string} userId
    * @returns {Promise<Object|null>}
    */
   async findByUserId(userId) {

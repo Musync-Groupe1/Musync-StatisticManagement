@@ -58,7 +58,7 @@ describe('/api/statistics/favorite-genre - GET handler', () => {
     // GIVEN
     connectToDatabase.mockResolvedValue(false);
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '42' } });
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' } });
     const res = httpMocks.createResponse();
 
     // WHEN
@@ -76,7 +76,7 @@ describe('/api/statistics/favorite-genre - GET handler', () => {
       getFavoriteGenre: jest.fn().mockResolvedValue(null),
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '123' } });
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' } });
     const res = httpMocks.createResponse();
 
     // WHEN
@@ -94,7 +94,7 @@ describe('/api/statistics/favorite-genre - GET handler', () => {
       getFavoriteGenre: jest.fn().mockResolvedValue('rock'),
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '123' } });
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' } });
     const res = httpMocks.createResponse();
 
     // WHEN
@@ -113,7 +113,7 @@ describe('/api/statistics/favorite-genre - GET handler', () => {
       getFavoriteGenre: jest.fn().mockRejectedValue(error),
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '123' } });
+    const req = httpMocks.createRequest({ method: 'GET', query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' } });
     const res = httpMocks.createResponse({ eventEmitter: (await import('events')).EventEmitter });
 
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {});

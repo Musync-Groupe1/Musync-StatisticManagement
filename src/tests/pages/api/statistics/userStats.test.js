@@ -68,7 +68,10 @@ describe('/api/statistics/userStats endpoint', () => {
   it('shouldReturn500WhenDatabaseConnectionFails', async () => {
     // GIVEN
     connectToDatabase.mockRejectedValue(new Error('DB fail'));
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '1' } });
+    const req = httpMocks.createRequest({
+        method: 'GET',
+        query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' }
+    });
     const res = httpMocks.createResponse({ eventEmitter: (await import('events')).EventEmitter });
 
     // WHEN / THEN
@@ -90,7 +93,10 @@ describe('/api/statistics/userStats endpoint', () => {
       getCompleteStats: () => ({})
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '1' } });
+    const req = httpMocks.createRequest({
+        method: 'GET',
+        query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' }
+    });
     const res = httpMocks.createResponse();
 
     // WHEN
@@ -112,7 +118,10 @@ describe('/api/statistics/userStats endpoint', () => {
       })
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '123' } });
+    const req = httpMocks.createRequest({
+        method: 'GET',
+        query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' }
+    });
     const res = httpMocks.createResponse();
 
     // WHEN
@@ -121,7 +130,7 @@ describe('/api/statistics/userStats endpoint', () => {
     // THEN
     expect(res._getStatusCode()).toBe(200);
     const json = res._getJSONData();
-    expect(json.user_id).toBe(123);
+    expect(json.user_id).toBe("fd961a0f-c94c-47ca-b0d9-8592e1fb79d1");
     expect(json.favorite_genre).toBe('rock');
     expect(json.top_listened_artists).toHaveLength(1);
     expect(json.top_listened_musics).toHaveLength(1);
@@ -136,7 +145,10 @@ describe('/api/statistics/userStats endpoint', () => {
       })
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '99' } });
+    const req = httpMocks.createRequest({
+        method: 'GET',
+        query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' }
+    });
     const res = httpMocks.createResponse();
 
     // WHEN
@@ -145,7 +157,7 @@ describe('/api/statistics/userStats endpoint', () => {
     // THEN
     expect(res._getStatusCode()).toBe(200);
     const json = res._getJSONData();
-    expect(json.user_id).toBe(99);
+    expect(json.user_id).toBe("fd961a0f-c94c-47ca-b0d9-8592e1fb79d1");
     expect(json.favorite_genre).toBeNull();
     expect(json.top_listened_artists).toEqual([]);
     expect(json.top_listened_musics).toHaveLength(1);
@@ -161,7 +173,10 @@ describe('/api/statistics/userStats endpoint', () => {
       })
     }));
 
-    const req = httpMocks.createRequest({ method: 'GET', query: { userId: '101' } });
+    const req = httpMocks.createRequest({
+        method: 'GET',
+        query: { userId: 'fd961a0f-c94c-47ca-b0d9-8592e1fb79d1' }
+    });
     const res = httpMocks.createResponse();
 
     // WHEN
@@ -170,7 +185,7 @@ describe('/api/statistics/userStats endpoint', () => {
     // THEN
     expect(res._getStatusCode()).toBe(200);
     const json = res._getJSONData();
-    expect(json.user_id).toBe(101);
+    expect(json.user_id).toBe("fd961a0f-c94c-47ca-b0d9-8592e1fb79d1");
     expect(json.favorite_genre).toBe('electro');
     expect(json.top_listened_artists).toHaveLength(1);
     expect(json.top_listened_musics).toEqual([]);

@@ -39,7 +39,7 @@ const swaggerOptions = {
           type: "object",
           required: ["user_id", "music_name", "artist_name", "ranking"],
           properties: {
-            user_id: { type: "integer", example: 12345, description: "Identifiant de l'utilisateur." },
+            user_id: { type: "string", example: "fd961a0f-c94c-47ca-b0d9-8592e1fb79d1", description: "Identifiant de l'utilisateur." },
             music_name: { type: "string", maxLength: 255, example: "Musique 1", description: "Nom de la musique écoutée." },
             artist_name: { type: "string", maxLength: 255, example: "Artiste musique 1", description: "Nom de l'artiste interprète de la musique." },
             ranking: { type: "integer", minimum: 1, maximum: 3, example: 1, unique: true, description: "Classement de la musique parmi les 3 plus écoutées." },
@@ -50,7 +50,7 @@ const swaggerOptions = {
           type: "object",
           required: ["user_id", "artist_name", "ranking"],
           properties: {
-            user_id: { type: "integer", example: 12345, description: "Identifiant de l'utilisateur." },
+            user_id: { type: "string", example: "fd961a0f-c94c-47ca-b0d9-8592e1fb79d1", description: "Identifiant de l'utilisateur." },
             artist_name: { type: "string", maxLength: 255, example: "Artiste 1", description: "Nom de l'artiste." },
             ranking: { type: "integer", minimum: 1, example: 1, unique: true, description: "Classement de l'artiste parmi les 3 plus écoutés."},
           },
@@ -60,7 +60,7 @@ const swaggerOptions = {
           type: "object",
           required: ["user_id", "favorite_genre"],
           properties: {
-            user_id: { type: "integer", unique: true, example: 12345, description: "Identifiant unique de l'utilisateur." },
+            user_id: { type: "string", unique: true, example: "fd961a0f-c94c-47ca-b0d9-8592e1fb79d1", description: "Identifiant unique de l'utilisateur." },
             favorite_genre: { type: "string", example: "Rock", description: "Genre musical favori de l'utilisateur." },
             top_listened_artists: {
               type: "array",
@@ -80,8 +80,8 @@ const swaggerOptions = {
           required: ["user_id", "music_platform"],
           properties: {
             user_id: {
-              type: "integer",
-              example: 12345,
+              type: "string",
+              example: "fd961a0f-c94c-47ca-b0d9-8592e1fb79d1",
               description: "Identifiant unique de l'utilisateur"
             },
             music_platform: { 

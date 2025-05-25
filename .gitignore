@@ -1,0 +1,9 @@
+Dockerfile
+coverage/
+dev-up.sh
+docker-compose.yml
+docs/
+node_modules/
+package-lock.json
+.dockerignore
+.next/

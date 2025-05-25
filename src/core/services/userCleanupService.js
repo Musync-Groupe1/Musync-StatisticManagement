@@ -23,7 +23,7 @@ export default class UserCleanupService {
   /**
    * Supprime toutes les données d’un utilisateur si celui-ci existe.
    *
-   * @param {string|number} userId - Identifiant de l'utilisateur
+   * @param {string} userId - Identifiant de l'utilisateur
    * @returns {Promise<Object|null>} - Résumé des suppressions, ou `null` si utilisateur inexistant
    */
   async deleteAllUserData(userId) {

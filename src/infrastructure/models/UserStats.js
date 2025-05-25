@@ -15,7 +15,7 @@ const UserMusicStatisticSchema = new mongoose.Schema({
    * Chaque utilisateur ne peut avoir qu’un seul document de statistiques.
    */
   user_id: { 
-    type: Number,
+    type: String,
     ref: 'User',
     required: true,
     unique: true,

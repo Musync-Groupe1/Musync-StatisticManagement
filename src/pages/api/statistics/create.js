@@ -28,9 +28,10 @@ import {isValidUserId, isValidMusicPlatform} from 'infrastructure/utils/inputVal
  *               - music_platform
  *             properties:
  *               userId:
- *                 type: integer
+ *                 type: string
+ *                 format: uuid
  *                 description: Identifiant unique de l'utilisateur
- *                 example: 123
+ *                 example: "fd961a0f-c94c-47ca-b0d9-8592e1fb79d1"
  *               music_platform:
  *                 type: string
  *                 description: >
@@ -90,7 +91,7 @@ export default async function handler(req, res) {
 
   // Vérification des paramètres
   if (!isValidUserId(userId)) {
-    return res.status(400).json({ error: 'Paramètre "userId" invalide : un entier est requis.' });
+    return res.status(400).json({ error: 'Paramètre "userId" invalide : un UUID est requis.' });
   }
 
   if (!isValidMusicPlatform(music_platform)) {

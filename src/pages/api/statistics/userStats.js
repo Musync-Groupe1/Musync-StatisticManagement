@@ -23,6 +23,7 @@ import { isValidUserId, isUserStatsEmpty } from 'infrastructure/utils/inputValid
  *     parameters:
  *       - in: query
  *         name: userId
+ *         format: uuid
  *         required: true
  *         description: Identifiant unique de l'utilisateur.
  *         schema:
@@ -36,9 +37,9 @@ import { isValidUserId, isUserStatsEmpty } from 'infrastructure/utils/inputValid
  *               type: object
  *               properties:
  *                 user_id:
- *                   type: integer
+ *                   type: string
  *                   description: L'identifiant de l'utilisateur
- *                   example: 123
+ *                   example: "fd961a0f-c94c-47ca-b0d9-8592e1fb79d1"
  *                 favorite_genre:
  *                   type: string
  *                   maxLength: 255
@@ -117,7 +118,7 @@ import { isValidUserId, isUserStatsEmpty } from 'infrastructure/utils/inputValid
  * 
  * @example
  * {
- *   "user_id": 42,
+ *   "user_id": "fd961a0f-c94c-47ca-b0d9-8592e1fb79d1",
  *   "favorite_genre": "rap",
  *   "top_listened_artists": [{ artist_name: "Eminem", ranking: 1 }],
  *   "top_listened_musics": [{ music_name: "Lose Yourself", artist_name: "Eminem", ranking: 1 }]
@@ -152,7 +153,7 @@ export default async function handler(req, res) {
     }
 
     res.status(200).json({
-      user_id: Number(userId),
+      user_id: userId,
       favorite_genre: stats.favorite_genre || null,
       top_listened_artists: stats.top_listened_artists || [],
       top_listened_musics: stats.top_listened_musics || []

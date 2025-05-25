@@ -19,7 +19,12 @@ import { setupSwaggerDocs } from './src/bootstrap/setupSwagger.js';
 const dev = process.env.NODE_ENV !== "production";
 const PORT = process.env.PORT || 3000;
 
-// Initialisation de Next.js
+// Définition dynamique du BASE_URL
+const BASE_URL = dev
+  ? `http://localhost:${PORT}`
+  : process.env.BASE_URL || `http://music-statistics-service:${PORT}`;
+
+  // Initialisation de Next.js
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
@@ -49,10 +54,10 @@ async function startServer() {
     // Gestion de toutes les routes via Next.js
     server.all("*", (req, res) => handle(req, res));
 
-    // Démarrage du serveur sur le port spécifié
-    server.listen(PORT, () => {
-      console.log(`Serveur prêt sur http://localhost:${PORT}`);
-      console.log(`Swagger UI : http://localhost:${PORT}/api-docs`);
+    // Démarrage du serveur sur l'URL spécifiée
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`Serveur prêt sur ${BASE_URL}`);
+      console.log(`Swagger UI : ${BASE_URL}/api-docs`);
     });
   } catch (err) {
     console.error("Erreur au démarrage du serveur :", err);
